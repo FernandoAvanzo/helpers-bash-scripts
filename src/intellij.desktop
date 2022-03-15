@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=212
+Name=IntelliJ
+Exec=/opt/jetbrains/intellij/idea.sh
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=/opt/jetbrains/intellij/idea.svg
+Categories=Development
+StartupNotify=true
