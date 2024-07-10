@@ -130,3 +130,13 @@ dmypy.json
 
 # Intellij
 .idea
+
+#Cloudquery
+/cloudquery.log
+/.cq/
+/.cq/*
+/output/
+/output/*
+/Cloudquery/monitoring-tool/output/
+/Cloudquery/monitoring-tool/output/*
+/Cloudquery/Cloudquery.iml

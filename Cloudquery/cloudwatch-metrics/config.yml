@@ -1,0 +1,41 @@
+kind: source
+spec:
+  name: "aws-cloudwatch-metrics"
+  path: cloudquery/aws
+  version: "v22.19.2"
+  tables:
+    - "aws_alpha_cloudwatch_metrics"
+    - "aws_alpha_cloudwatch_metric_statistics"
+  destinations: [ "file" ]
+  spec:
+    regions:
+      - us-east-1
+    aws_debug: true
+    use_paid_apis: true
+    accounts:
+      - id: "<aws account number>"
+        local_profile: <region>
+    table_options:
+      aws_alpha_cloudwatch_metrics:
+        - list_metrics:
+            namespace: "AWS/Usage"
+          get_metric_statistics:
+            - starttime: "${START_TIME}"
+              endtime: "${END_TIME}"
+              period: 3600
+              statistics:
+                - "Average"
+                - "Sum"
+                - "Maximum"
+                - "Minimum"
+---
+Kind: destination
+spec:
+  name: "file"
+  path: "cloudquery/file"
+  registry: "cloudquery"
+  version: "v5.1.0"
+  write_mode: "overwrite"
+  spec:
+    path: "${CLOUDWATCH_METRICS_OUTPUT}/output/{{TABLE}}/{{UUID}}.{{FORMAT}}"
+    format: "csv"
