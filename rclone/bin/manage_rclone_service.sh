@@ -8,13 +8,13 @@ manage_rclone_service() {
   fi
 
   # Enable the rclone service
-  if ! systemctl enable rclone/rclone-mount.service; then
+  if ! systemctl enable rclone-mount.service; then
     echo "Failed to enable rclone-mount.service."
     return 1
   fi
 
   # Start the rclone service
-  if ! systemctl start rclone/rclone-mount.service; then
+  if ! systemctl start rclone-mount.service; then
     echo "Failed to start rclone-mount.service."
     return 1
   fi
