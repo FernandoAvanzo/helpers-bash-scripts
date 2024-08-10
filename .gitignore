@@ -140,3 +140,6 @@ dmypy.json
 /Cloudquery/monitoring-tool/output/
 /Cloudquery/monitoring-tool/output/*
 /Cloudquery/Cloudquery.iml
+/GmailFilters/GmailFilters.iml
+/rclone/rclone.iml
+/ZSH_config_template/ZSH_config_template.iml
