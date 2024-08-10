@@ -9,11 +9,5 @@ RestartSec=1
 User=fernandoavanzo
 ExecStart=rclone mount remote: /mnt/data/gdrive/avanzo-drive --vfs-cache-mode full
 
-[Mount]
-Type=rclone
-What=sftp1:1subdir
-Where=/mnt/data/gdrive/avanzo-drive
-Options=rw,_netdev,allow_other,args2env,vfs-cache-mode=writes,config=/etc/rclone.conf,cache-dir=/var/rclone
-
 [Install]
 WantedBy=multi-user.target

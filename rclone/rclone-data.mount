@@ -1,0 +1,8 @@
+[Unit]
+Description=Rclone Mount
+
+[Mount]
+Type=rclone
+What=sftp1:1subdir
+Where=/mnt/data/gdrive/avanzo-drive
+Options=rw,_netdev,allow_other,args2env,vfs-cache-mode=writes,config=/etc/rclone.conf,cache-dir=/var/rclone
