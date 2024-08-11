@@ -41,6 +41,3 @@ EOF
 
 export -f remove_old_docker
 export -f remove_conflict_packages
-
-remove_old_docker
-remove_conflict_packages
