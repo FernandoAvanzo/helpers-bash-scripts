@@ -7,7 +7,7 @@ export RCLONE="$HOME/.Library/rclone"
 # shellcheck source=./bin/manage_rclone_service.sh
 source "$RCLONE"/bin/manage_rclone_service.sh
 
-# shellcheck source=./bin/manage_rclone_service.sh
+# shellcheck source=./bin/rclone_reconnect.sh
 source "$RCLONE"/bin/rclone_reconnect.sh
 
 if ! rclone ls remote:/BaseDeConhecimento; then
