@@ -4,7 +4,7 @@ export PROJECTS=$HOME/Projects/
 export HELPERS_BASH_SCRIPTS=$PROJECTS/helpers-bash-scripts
 export DOCKER=$HELPERS_BASH_SCRIPTS/Docker
 
-# shellcheck source=./remove_old_installation.sh
+# shellcheck source=./bin/remove_old_installation.sh
 source "$DOCKER"/bin/remove_old_installation.sh
 # shellcheck source=./bin/install_docker_engine.sh
 source "$DOCKER"/bin/install_docker_engine.sh
