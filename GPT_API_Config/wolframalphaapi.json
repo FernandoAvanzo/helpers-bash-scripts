@@ -1,0 +1,60 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "wolfram",
+    "version": "1.0.1"
+  },
+  "paths": {
+    "/api/v1/llm-api": {
+      "get": {
+        "operationId": "getWolframAlphaResults",
+        "summary": "Wolfram|Alpha query",
+        "security": [
+                            {
+                                "BearerAuth": []
+                            }],
+        "description": "It brings the metadata about knowledge base. Shows number of records and a sample record.",
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "description": "the input",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result of Wolfram|Alpha query",
+            "content": {
+              "text/plain": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+      "schemas": {
+          },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://www.wolframalpha.com"
+    }
+  ]
+}
