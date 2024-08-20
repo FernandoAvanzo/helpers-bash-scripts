@@ -130,6 +130,8 @@ dmypy.json
 
 # Intellij
 .idea
+/.idea
+/.idea/*
 
 #Cloudquery
 /cloudquery.log
@@ -145,3 +147,6 @@ dmypy.json
 /ZSH_config_template/ZSH_config_template.iml
 /Docker/Docker.iml
 /GPT_API_Config/GPT_API_Config.iml
+/PulaMariana/PulaMariana.iml
+/PulaMariana/.gradle/
+/PulaMariana/.gradle/*
