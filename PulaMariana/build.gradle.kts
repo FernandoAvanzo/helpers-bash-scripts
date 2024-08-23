@@ -1,7 +1,8 @@
 import org.gradle.jvm.tasks.Jar
 
 plugins {
-    kotlin("jvm") version "2.0.0"
+    kotlin("jvm") version "2.0.20"
+    application
 }
 
 group = "org.example"
@@ -21,6 +22,11 @@ tasks.test {
 
 kotlin {
     jvmToolchain(21)
+}
+
+application {
+    // Define the main class for the application
+    mainClass.set("MainKt")
 }
 
 // Configure the existing jar task to include the main class in the manifest

@@ -148,9 +148,17 @@ dmypy.json
 /Docker/Docker.iml
 /GPT_API_Config/GPT_API_Config.iml
 /PulaMariana/PulaMariana.iml
+/.kotlin
+/.kotlin/*
 /PulaMariana/.gradle/
 /PulaMariana/.gradle/*
 /PulaMariana/.kotlin
 /PulaMariana/.kotlin/*
 /PulaMariana/build/
 /PulaMariana/build/*
+/gradle/
+/gradle/*
+/.gradle/
+/.gradle/*
+/.build/
+/.build/*
