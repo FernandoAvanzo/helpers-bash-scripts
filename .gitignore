@@ -152,7 +152,7 @@ dmypy.json
 /.kotlin/*
 /PulaMariana/.gradle/
 /PulaMariana/.gradle/*
-/PulaMariana/.kotlin
+/PulaMariana/.kotlin/
 /PulaMariana/.kotlin/*
 /PulaMariana/build/
 /PulaMariana/build/*
