@@ -25,11 +25,9 @@ kotlin {
 }
 
 application {
-    // Define the main class for the application
     mainClass.set("MainKt")
 }
 
-// Configure the existing jar task to include the main class in the manifest
 tasks.named<Jar>("jar") {
     manifest {
         attributes["Main-Class"] = "MainKt"
