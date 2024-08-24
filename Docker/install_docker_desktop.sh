@@ -14,6 +14,7 @@ url="https://desktop.docker.com/linux/main/amd64/docker-desktop-amd64.deb?utm_so
 dest_path="$HOME/Downloads/docker-desktop-amd64.deb"
 
 install_docker_desktop() {
+  install_docker_components
   echo $password | sudo -S dpkg -i ~/Downloads/docker-desktop-amd64.deb
   rm -rf ~/Downloads/docker-desktop-amd64.deb
 }

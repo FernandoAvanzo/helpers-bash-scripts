@@ -42,13 +42,23 @@ EOF
 
 purge_docker_desktop() {
   /usr/bin/expect <<EOF
+log_user 1  ;# Enable logging for debugging
 set timeout -1
 
 spawn sudo apt purge docker-desktop
-expect "password for"
-
-send -- "fer010486\r"
-expect eof
+expect {
+  "password for*" {
+    send "fer010486\r"
+    exp_continue
+  }
+  "Do you want to continue?*" {
+    send "y\r"
+    exp_continue
+  }
+  eof {
+    exit
+  }
+}
 EOF
 
   # Remove any related directories if necessary
