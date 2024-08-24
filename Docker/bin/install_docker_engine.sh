@@ -31,11 +31,24 @@ add_docker_repository () {
 EOF
 }
 
+
+# Function to check if Docker APT keyrings and repository are already set up
+check_docker_setup () {
+  # Check if the docker keyring file exists and is readable
+  if [ -r /etc/apt/keyrings/docker.asc ]; then
+    # Check if the Docker repository is in the sources list
+    if grep -q "^deb .*/download.docker.com/linux/ubuntu" /etc/apt/sources.list.d/docker.list 2>/dev/null; then
+      return 0  # True
+    fi
+  fi
+  return 1  # False
+}
+
 install_docker_components () {
   # The command block to be executed by expect
   expect << EOF
   set timeout -1
-  spawn /bin/bash -c "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+  spawn /bin/bash -c "sudo apt install -y docker-ce-cli uidmap"
 
   expect {
       "password for" { send "$sudo_password\r"; exp_continue }

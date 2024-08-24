@@ -39,5 +39,32 @@ EOF
   done
 }
 
+
+purge_docker_desktop() {
+  /usr/bin/expect <<EOF
+set timeout -1
+
+spawn sudo apt purge docker-desktop
+expect "password for"
+
+send -- "fer010486\r"
+expect eof
+EOF
+
+  # Remove any related directories if necessary
+  if [ -d /var/lib/docker-desktop ]; then
+    sudo rm -rf /var/lib/docker-desktop
+  fi
+
+  if [ -d /var/lib/docker ]; then
+    sudo rm -rf /var/lib/docker
+  fi
+
+  if [ -d /var/lib/containerd ]; then
+    sudo rm -rf /var/lib/containerd
+  fi
+}
+
+export -f purge_docker_desktop
 export -f remove_old_docker
 export -f remove_conflict_packages
