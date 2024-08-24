@@ -39,9 +39,10 @@ EOF
   done
 }
 
-
 purge_docker_desktop() {
-  /usr/bin/expect <<EOF
+  # Check if docker-desktop is installed
+  if dpkg-query -W -f='${Status}' docker-desktop 2>/dev/null | grep -q "install ok installed"; then
+    /usr/bin/expect <<EOF
 log_user 1  ;# Enable logging for debugging
 set timeout -1
 
@@ -60,18 +61,20 @@ expect {
   }
 }
 EOF
+    # Remove any related directories if necessary
+    if [ -d /var/lib/docker-desktop ]; then
+      sudo rm -rf /var/lib/docker-desktop
+    fi
 
-  # Remove any related directories if necessary
-  if [ -d /var/lib/docker-desktop ]; then
-    sudo rm -rf /var/lib/docker-desktop
-  fi
+    if [ -d /var/lib/docker ]; then
+      sudo rm -rf /var/lib/docker
+    fi
 
-  if [ -d /var/lib/docker ]; then
-    sudo rm -rf /var/lib/docker
-  fi
-
-  if [ -d /var/lib/containerd ]; then
-    sudo rm -rf /var/lib/containerd
+    if [ -d /var/lib/containerd ]; then
+      sudo rm -rf /var/lib/containerd
+    fi
+  else
+    echo "docker-desktop is not installed. Nothing to do."
   fi
 }
 
