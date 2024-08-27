@@ -3,4 +3,11 @@ plugins {
 }
 rootProject.name = "helpers-bash-scripts"
 
+include("BashLib")
+include("Cloudquery")
+include("Docker")
+include("GmailFilters")
+include("GPT_API_Config")
 include("PulaMariana")
+include("rclone")
+include("ZSH_config_template")
