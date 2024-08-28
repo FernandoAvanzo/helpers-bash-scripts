@@ -5,7 +5,7 @@ plugins {
     application
 }
 
-group = "org.example"
+group = "app"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -25,11 +25,11 @@ kotlin {
 }
 
 application {
-    mainClass.set("MainKt")
+    mainClass.set("app.MainKt")
 }
 
 tasks.named<Jar>("jar") {
     manifest {
-        attributes["Main-Class"] = "MainKt"
+        attributes["Main-Class"] = "app.MainKt"
     }
 }
