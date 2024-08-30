@@ -1,7 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2086
 
-export GRADLE_JETBRAINS_MODULES="/home/fernandoavanzo/.gradle/caches/modules-2/files-2.1"
 export PROJECTS="$HOME/Projects"
 export BASH_SCRIPTS="$PROJECTS/helpers-bash-scripts"
 export MARIANA="$BASH_SCRIPTS/PulaMariana"
