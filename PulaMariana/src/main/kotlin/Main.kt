@@ -1,4 +1,3 @@
-package app
 
 val numberToName = mapOf(
     1 to "um",
