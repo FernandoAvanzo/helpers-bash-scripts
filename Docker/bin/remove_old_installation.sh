@@ -25,13 +25,13 @@ remove_conflict_packages() {
   for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
     if dpkg-query -W -f='${Status}' $pkg 2>/dev/null | grep -q "install ok installed"; then
       /usr/bin/expect <<EOF
-set timeout -1
+        set timeout -1
 
-spawn sudo apt-get remove -y $pkg
-expect "password for"
+        spawn sudo apt-get remove -y $pkg
+        expect "password for"
 
-send -- "fer010486\r"
-expect eof
+        send -- "fer010486\r"
+        expect eof
 EOF
     else
       echo "$pkg is not installed."
@@ -40,38 +40,39 @@ EOF
 }
 
 purge_docker_desktop() {
+  local password="fer010486"
   # Check if docker-desktop is installed
   if dpkg-query -W -f='${Status}' docker-desktop 2>/dev/null | grep -q "install ok installed"; then
     /usr/bin/expect <<EOF
-log_user 1  ;# Enable logging for debugging
-set timeout -1
+      log_user 1  ;# Enable logging for debugging
+      set timeout -1
 
-spawn sudo apt purge docker-desktop
-expect {
-  "password for*" {
-    send "fer010486\r"
-    exp_continue
-  }
-  "Do you want to continue?*" {
-    send "y\r"
-    exp_continue
-  }
-  eof {
-    exit
-  }
-}
+      spawn sudo apt purge docker-desktop
+      expect {
+        "password for*" {
+          send "fer010486\r"
+          exp_continue
+        }
+        "Do you want to continue?*" {
+          send "y\r"
+          exp_continue
+        }
+        eof {
+          exit
+        }
+      }
 EOF
     # Remove any related directories if necessary
     if [ -d /var/lib/docker-desktop ]; then
-      sudo rm -rf /var/lib/docker-desktop
+      echo $password | sudo -S rm -rf /var/lib/docker-desktop
     fi
 
     if [ -d /var/lib/docker ]; then
-      sudo rm -rf /var/lib/docker
+      echo $password | sudo -S rm -rf /var/lib/docker
     fi
 
     if [ -d /var/lib/containerd ]; then
-      sudo rm -rf /var/lib/containerd
+      echo $password | sudo -S rm -rf /var/lib/containerd
     fi
   else
     echo "docker-desktop is not installed. Nothing to do."

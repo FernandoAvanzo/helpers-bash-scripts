@@ -9,8 +9,9 @@ source "$DOCKER"/bin/remove_old_installation.sh
 # shellcheck source=./bin/install_docker_engine.sh
 source "$DOCKER"/bin/install_docker_engine.sh
 
+
 password="fer010486"
-url="https://desktop.docker.com/linux/main/amd64/docker-desktop-amd64.deb?utm_source=docker&utm_medium=webreferral&utm_campaign=docs-driven-download-linux-amd64&_gl=1*1ealb9j*_gcl_au*MTEwNTUzMjc4Ni4xNzIzMzkxMTU2*_ga*ODgwNzUwODQ5LjE3MjMzMDQwOTI.*_ga_XJWPQMJYHQ*MTcyNDUwMzU5Mi4zLjEuMTcyNDUwNTQwMy4zNS4wLjA."
+url="https://desktop.docker.com/linux/main/amd64/167172/docker-desktop-amd64.deb?_gl=1*1id00j9*_gcl_au*MTEwNTUzMjc4Ni4xNzIzMzkxMTU2*_ga*ODgwNzUwODQ5LjE3MjMzMDQwOTI.*_ga_XJWPQMJYHQ*MTcyNjE2NDc2OS43LjEuMTcyNjE2NTAzNC40Mi4wLjA."
 dest_path="$HOME/Downloads/docker-desktop-amd64.deb"
 
 install_docker_desktop() {
