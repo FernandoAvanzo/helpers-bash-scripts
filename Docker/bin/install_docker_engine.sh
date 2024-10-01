@@ -1,6 +1,11 @@
 #!/bin/bash
 
-sudo_password="fer010486"
+export HELPERS="$MY_CLI/BashLib/src/helpers"
+
+# shellcheck source=./../../BashLib/src/helpers/root-password.sh
+source "$HELPERS"/root-password.sh
+
+sudo_password="$(getRootPassword)"
 
 add_docker_apt_keyrings() {
   # The command block to be executed by expect

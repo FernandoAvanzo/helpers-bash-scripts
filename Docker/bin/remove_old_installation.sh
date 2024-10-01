@@ -1,5 +1,12 @@
 #!/bin/bash
 
+export HELPERS="$MY_CLI/BashLib/src/helpers"
+
+# shellcheck source=./../../BashLib/src/helpers/root-password.sh
+source "$HELPERS"/root-password.sh
+
+password="$(getRootPassword)"
+
 remove_old_docker() {
   /usr/bin/expect <<EOF
 set timeout -1
@@ -7,7 +14,7 @@ set timeout -1
 spawn sudo apt purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
 expect "password for"
 
-send -- "fer010486\r"
+send -- "$password\r"
 expect eof
 EOF
 
@@ -30,7 +37,7 @@ remove_conflict_packages() {
         spawn sudo apt-get remove -y $pkg
         expect "password for"
 
-        send -- "fer010486\r"
+        send -- "$password\r"
         expect eof
 EOF
     else
@@ -40,7 +47,6 @@ EOF
 }
 
 purge_docker_desktop() {
-  local password="fer010486"
   # Check if docker-desktop is installed
   if dpkg-query -W -f='${Status}' docker-desktop 2>/dev/null | grep -q "install ok installed"; then
     /usr/bin/expect <<EOF
@@ -50,7 +56,7 @@ purge_docker_desktop() {
       spawn sudo apt purge docker-desktop
       expect {
         "password for*" {
-          send "fer010486\r"
+          send "$password\r"
           exp_continue
         }
         "Do you want to continue?*" {
@@ -64,15 +70,15 @@ purge_docker_desktop() {
 EOF
     # Remove any related directories if necessary
     if [ -d /var/lib/docker-desktop ]; then
-      echo $password | sudo -S rm -rf /var/lib/docker-desktop
+      echo "$password" | sudo -S rm -rf /var/lib/docker-desktop
     fi
 
     if [ -d /var/lib/docker ]; then
-      echo $password | sudo -S rm -rf /var/lib/docker
+      echo "$password" | sudo -S rm -rf /var/lib/docker
     fi
 
     if [ -d /var/lib/containerd ]; then
-      echo $password | sudo -S rm -rf /var/lib/containerd
+      echo "$password" | sudo -S rm -rf /var/lib/containerd
     fi
   else
     echo "docker-desktop is not installed. Nothing to do."

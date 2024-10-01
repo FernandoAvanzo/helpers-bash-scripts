@@ -1,7 +1,13 @@
 #!/bin/bash
 
+export HELPERS="$MY_CLI/BashLib/src/helpers"
+
+# shellcheck source=./../../BashLib/src/helpers/root-password.sh
+source "$HELPERS"/root-password.sh
+
 create_library_symlink() {
-  local sudo_password="fer010486"
+  local sudo_password
+  sudo_password="$(getRootPassword)"
 
   # Check if the symbolic link exists
   if [ ! -L /root/.Library ]; then
