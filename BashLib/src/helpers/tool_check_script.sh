@@ -1,5 +1,12 @@
 #!/bin/bash
 
+export HELPERS="$MY_CLI/BashLib/src/helpers"
+
+# shellcheck source=./root-password.sh
+source "$HELPERS"/root-password.sh
+
+sudo_password="$(getRootPassword)"
+
 function check_and_install_tools() {
     # Check if gh is installed, if not install it
     if ! command -v gh &> /dev/null
@@ -10,7 +17,7 @@ function check_and_install_tools() {
         if ! command -v brew &> /dev/null
         then
             echo "Homebrew is not installed. To install it, your user password is needed:"
-            sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            echo "$sudo_password" | sudo -S /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         fi
 
         # Installing gh
@@ -35,4 +42,19 @@ function install_or_upgrade_babashka() {
   bash <(curl -s https://raw.githubusercontent.com/babashka/babashka/master/install)
   # Verify the installation
   bb --version
+}
+
+
+function check_and_install_expect() {
+    # Check if expect is installed, if not install it
+    if ! command -v expect &> /dev/null
+    then
+        echo "expect could not be found, attempting to install."
+        
+        # Update the package list and install expect
+        echo "$sudo_password" | sudo -S apt update
+        echo "$sudo_password" | sudo -S apt install -y expect
+    else
+        echo "expect is already installed."
+    fi
 }

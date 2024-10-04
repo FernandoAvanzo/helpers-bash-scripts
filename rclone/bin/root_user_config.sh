@@ -4,6 +4,10 @@ export HELPERS="$MY_CLI/BashLib/src/helpers"
 
 # shellcheck source=./../../BashLib/src/helpers/root-password.sh
 source "$HELPERS"/root-password.sh
+# shellcheck source=./../../BashLib/src/helpers/tool_check_script.sh
+source "$HELPERS"/tool_check_script.sh
+
+check_and_install_expect
 
 create_library_symlink() {
   local sudo_password
