@@ -83,14 +83,12 @@ manage_rclone_service() {
   return 0
 }
 
-
 edit_rclone_service_file() {
   local service_file="$HOME/.Library/rclone/rclone-mount.service"
   local placeholder="<USER>"
   
   if [ -f "$service_file" ]; then
-    sed -i "s/User=$placeholder/User=$USER/" "$service_file"
-    if [ $? -eq 0 ]; then
+    if sed -i "s/User=$placeholder/User=$USER/" "$service_file"; then
       echo "Successfully replaced $placeholder with $USER in $service_file."
     else
       echo "Failed to edit the service file."
