@@ -1,9 +1,61 @@
 #!/bin/bash
-
 export HELPERS="$MY_CLI/BashLib/src/helpers"
+export RCLONE="$HOME/.Library/rclone"
 
 # shellcheck source=./../../BashLib/src/helpers/root-password.sh
 source "$HELPERS"/root-password.sh
+
+check_and_create_folder() {
+  local folder_path
+  local password
+  password="$(getRootPassword)"
+  folder_path="/mnt/data/gdrive/avanzo-drive"
+
+  if [ ! -d "$folder_path" ]; then
+    echo "Folder does not exist. Creating new folder at $folder_path"
+    if ! echo "$password" | sudo -S mkdir -p "$folder_path"; then
+      echo "Failed to create folder."
+      return 1
+    fi
+  else
+    echo "Folder already exists at $folder_path"
+  fi
+
+  return 0
+}
+
+create_systemd_symlink() {
+  local password
+  password="$(getRootPassword)"
+
+  if [ ! -L "/etc/systemd/system/rclone-mount.service" ]; then
+    echo "Symbolic link does not exist. Creating symbolic link."
+    if ! echo "$password" | sudo -S ln -sf "$RCLONE"/rclone-mount.service /etc/systemd/system/rclone-mount.service; then
+      echo "Failed to create symbolic link."
+      return 1
+    fi
+  else
+    echo "Symbolic link already exists."
+  fi
+
+  return 0
+}
+
+verify_avanzo_drive_symlink() {
+  local symlink_path="/home/$USER/avanzo-drive"
+
+  if [ ! -L "$symlink_path" ]; then
+    echo "Symbolic link does not exist. Creating symbolic link."
+    if ! ln -sf /mnt/data/gdrive/avanzo-drive "$symlink_path"; then
+      echo "Failed to create symbolic link."
+      return 1
+    fi
+  else
+    echo "Symbolic link already exists."
+  fi
+
+  return 0
+}
 
 manage_rclone_service() {
   local password
@@ -29,4 +81,4 @@ manage_rclone_service() {
 
   echo "rclone-mount.service successfully reloaded, enabled, and started."
   return 0
-  }
+}
