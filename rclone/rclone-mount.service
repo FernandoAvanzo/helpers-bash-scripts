@@ -6,7 +6,7 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-User=$USER
+User=<USER>
 ExecStart=/usr/bin/rclone mount remote: /mnt/data/gdrive/avanzo-drive --vfs-cache-mode full
 
 [Install]

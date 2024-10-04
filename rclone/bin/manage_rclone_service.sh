@@ -82,3 +82,24 @@ manage_rclone_service() {
   echo "rclone-mount.service successfully reloaded, enabled, and started."
   return 0
 }
+
+
+edit_rclone_service_file() {
+  local service_file="$HOME/.Library/rclone/rclone-mount.service"
+  local placeholder="<USER>"
+  
+  if [ -f "$service_file" ]; then
+    sed -i "s/User=$placeholder/User=$USER/" "$service_file"
+    if [ $? -eq 0 ]; then
+      echo "Successfully replaced $placeholder with $USER in $service_file."
+    else
+      echo "Failed to edit the service file."
+      return 1
+    fi
+  else
+    echo "Service file $service_file does not exist."
+    return 1
+  fi
+
+  return 0
+}
