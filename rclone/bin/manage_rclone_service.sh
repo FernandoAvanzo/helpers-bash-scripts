@@ -24,6 +24,36 @@ check_and_create_folder() {
   return 0
 }
 
+
+verify_folder_ownership() {
+  local owner
+  local password
+  local folder_path
+  folder_path="/mnt/data/gdrive/avanzo-drive"
+  password="$(getRootPassword)"
+
+  if [ -d "$folder_path" ]; then
+    owner=$(stat -c '%U' "$folder_path")
+
+    if [ "$owner" != "$USER" ]; then
+      echo "Folder is not owned by $USER. Changing ownership."
+
+      if ! echo "$password" | sudo -S chown "$USER":"$USER" "$folder_path"; then
+        echo "Failed to change folder ownership."
+        return 1
+      fi
+    else
+      echo "Folder is already owned by $USER."
+    fi
+
+  else
+    echo "Folder $folder_path does not exist."
+    return 1
+  fi
+
+  return 0
+}
+
 create_systemd_symlink() {
   local password
   password="$(getRootPassword)"
