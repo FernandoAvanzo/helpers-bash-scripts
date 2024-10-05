@@ -1,15 +1,37 @@
 # Rclone Helper Scripts
 
+### Configure the `rclone-mount.service` to run at system startup
+
+1. Run the command:
+    ```bash
+    sudo crontab -e
+    ```
+2. Add the following line to the file:
+    ```bash
+    @reboot sudo init_rclone
+    ```
+3. Save the file and restart the system. If everything is correct, the service should run at system startup.
+
 ### Known issues
 
-- **the service do not mount the remote in the folder**
-  > Check if the service is set to the right system user, and if the mount folder is owned by the right user.
+- **The service does not mount the remote in the folder**
+  > Check if the service is set to the correct system user, and if the mount folder is owned by the appropriate user.
   >
-  > Use this command to get some service log:
+  > Use this command to get some service logs:
   >
   > ```bash
-  >      sudo journalctl -u rclone-mount.service --since "today"
-  >   ```
+  > sudo journalctl -u rclone-mount.service --since "today"
+  > ```
+
+- **The remote folder is mounted but is empty**
+  > Probably the Rclone token has expired.
+  >
+  > To generate a new one, open the terminal and type the following command:
+  >
+  > ```bash
+  > init_rclone
+  > ```
+  > This command will generate a new token and restart the service. After that, the remote folder should work again.
 
 ### Backlog of Improvements
 
