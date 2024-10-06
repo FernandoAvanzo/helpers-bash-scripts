@@ -72,7 +72,7 @@ create_systemd_symlink() {
 }
 
 verify_avanzo_drive_symlink() {
-  local symlink_path="/home/$USER/avanzo-drive"
+  local symlink_path="$HOME/avanzo-drive"
 
   if [ ! -L "$symlink_path" ]; then
     echo "Symbolic link does not exist. Creating symbolic link."
