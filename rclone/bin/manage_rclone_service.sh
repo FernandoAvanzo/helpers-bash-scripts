@@ -64,8 +64,8 @@ check_folder_permissions() {
     permissions=$(stat -c "%a" "$folder_path")
     
     if [ "$permissions" != "777" ]; then
-      echo "Folder does not have 777 permissions. Setting permissions to 777."
-      if ! echo "$password" | sudo -S chmod 777 "$folder_path"; then
+      echo "Folder does not have 777 permissions. Setting permissions to 777 for all files and subdirectories."
+      if ! echo "$password" | sudo -S chmod -R 777 "$folder_path"; then
         echo "Failed to set permissions."
         return 1
       fi
