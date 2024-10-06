@@ -22,23 +22,24 @@ EOF
 
 add_docker_repository() {
   local password
-  password="fer010486"
-  echo $password | sudo -S apt-get update
-  echo $password | sudo -S apt-get install ca-certificates curl
-  echo $password | sudo -S install -m 0755 -d /etc/apt/keyrings
-  echo $password | sudo -S curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-  echo $password | sudo -S chmod a+r /etc/apt/keyrings/docker.asc
+  password="$(getRootPassword)"
+  echo "$password" | sudo -S apt-get update
+  echo "$password" | sudo -S apt-get install ca-certificates curl
+  echo "$password" | sudo -S install -m 0755 -d /etc/apt/keyrings
+  echo "$password" | sudo -S curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  echo "$password" | sudo -S chmod a+r /etc/apt/keyrings/docker.asc
 
   # Add the repository to Apt sources:
   echo \
     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
     sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-  echo $password | sudo -S apt-get update
+  echo "$password" | sudo -S apt-get update
 }
 
 # Function to check if Docker APT keyrings and repository are already set up
 check_docker_setup() {
+  echo "$sudo_password" | sudo -S apt install --fix-broken -y
   # Check if the docker keyring file exists and is readable
   if [ -r /etc/apt/keyrings/docker.asc ]; then
     # Check if the Docker repository is in the sources list
@@ -53,7 +54,7 @@ install_docker_components() {
   # The command block to be executed by expect
   expect <<EOF
   set timeout -1
-  spawn /bin/bash -c "sudo apt install -y docker-ce-cli libqrencode4 uidmap tree qrencode xclip pass"
+  spawn /bin/bash -c "sudo apt install -y docker-ce-cli libqrencode4 uidmap tree qrencode xclip pass qemu-system-x86"
 
   expect {
       "password for" { send "$sudo_password\r"; exp_continue }
