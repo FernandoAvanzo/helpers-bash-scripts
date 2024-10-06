@@ -37,6 +37,11 @@
        ```bash
          sudo ln -sf <absolute path to the local user>/.config/rclone /root/.config/rclone
        ```         
+   4. Run the command `sudo chmod 777 ./rclone.conf` to ensure that all system user can properlly access the rclone configuration:
+      ```bash
+        sudo cd <absolute path to the local user>/.config/rclone
+        sudo sudo chmod 777 ./rclone.conf
+      ```   
 
 4. Save all changes and restart the system. If everything is correct, the service should run at system startup.
 
