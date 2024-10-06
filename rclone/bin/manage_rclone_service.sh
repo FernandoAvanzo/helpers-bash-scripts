@@ -54,6 +54,32 @@ verify_folder_ownership() {
   return 0
 }
 
+check_folder_permissions() {
+  local folder_path="/mnt/data/gdrive/avanzo-drive"
+  local password
+  password="$(getRootPassword)"
+  
+  if [ -d "$folder_path" ]; then
+    local permissions
+    permissions=$(stat -c "%a" "$folder_path")
+    
+    if [ "$permissions" != "777" ]; then
+      echo "Folder does not have 777 permissions. Setting permissions to 777."
+      if ! echo "$password" | sudo -S chmod 777 "$folder_path"; then
+        echo "Failed to set permissions."
+        return 1
+      fi
+    else
+      echo "Folder already has 777 permissions."
+    fi
+  else
+    echo "Folder $folder_path does not exist."
+    return 1
+  fi
+
+  return 0
+}
+
 create_systemd_symlink() {
   local password
   password="$(getRootPassword)"

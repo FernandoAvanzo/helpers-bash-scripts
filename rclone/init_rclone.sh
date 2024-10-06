@@ -9,6 +9,7 @@ source "$RCLONE"/bin/rclone_reconnect.sh
 
 check_and_create_folder
 verify_folder_ownership
+check_folder_permissions
 create_systemd_symlink
 verify_avanzo_drive_symlink
 
