@@ -13,6 +13,7 @@ source "$MY_CLI"/rclone/bin/manage_rclone_service.sh
 password="$(getRootPassword)"
 
 create_library_symlink
+create_projects_symlink
 
 cp -f "$DEV_RCLONE"/rclone-mount.service "$RCLONE"
 cp -f "$DEV_RCLONE"/init_rclone.sh "$RCLONE"

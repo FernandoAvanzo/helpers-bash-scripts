@@ -8,9 +8,37 @@
     ```
 2. Add the following line to the file:
     ```bash
-    @reboot sudo init_rclone
+    @reboot init_rclone
     ```
-3. Save the file and restart the system. If everything is correct, the service should run at system startup.
+3. To ensure that the service runs flawlessly at system startup, make the following additional changes:
+    1. Edit the file `/etc/profile` to add the following environment variables:
+       ```bash
+         ### Custom Bash Scripts
+         export MY_CLI="<absolute path to the local user>/Projects/helpers-bash-scripts"
+         
+         ### 1Password Token
+         export OP_SERVICE_ACCOUNT_TOKEN="<token of 1password service account>"
+         
+         ### 1Password Secret Item Name
+         export ROOT_SECRET_NAME="<name of secret item>" 
+       ```   
+    2. Edit the file `/etc/bash.bashrc` to add the following environment variables:
+       ```bash
+         ### Custom Bash Scripts
+         export MY_CLI="<absolute path to the local user>/Projects/helpers-bash-scripts"
+         
+         ### 1Password Token
+         export OP_SERVICE_ACCOUNT_TOKEN="<token of 1password service account>"
+         
+         ### 1Password Secret Item Name
+         export ROOT_SECRET_NAME="<name of secret item>" 
+       ```      
+    3. Create the symbolic link `/root/.config/rclone` by running the command below:
+       ```bash
+         sudo ln -sf <absolute path to the local user>/.config/rclone /root/.config/rclone
+       ```         
+
+4. Save all changes and restart the system. If everything is correct, the service should run at system startup.
 
 ### Known issues
 
