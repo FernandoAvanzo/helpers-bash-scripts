@@ -86,3 +86,13 @@
 
 //Samsung Filter
 {from: "no.reply@samsungatendimento.com.br", from: "sa.noreply@samsung-mail.com", from: "*@samsung*"}
+
+//DocSign filter
+{
+  from: "dse_na2@docusign.net",
+}
+
+//with out filter
+from: "emxt.fa.sender@workflow.mail.la1.oraclecloud.com",
+
+from: "noreply@mziq.com",
