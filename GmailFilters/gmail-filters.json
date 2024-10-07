@@ -92,6 +92,15 @@
   from: "dse_na2@docusign.net",
 }
 
+//gupy
+{from:"no-reply@gupy.com.br"}
+
+//Greenhouse
+{from: "no-reply@us.greenhouse-mail.io"}
+
+//workday
+{myworkday}
+
 //with out filter
 from: "emxt.fa.sender@workflow.mail.la1.oraclecloud.com",
 
