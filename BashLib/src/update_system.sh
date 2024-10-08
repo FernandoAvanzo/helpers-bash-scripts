@@ -5,7 +5,7 @@ export HELPERS="$MY_CLI/BashLib/src/helpers"
 source "$HELPERS"/root-password.sh
 
 password="$(getRootPassword)"
-echo "$password" | sudo -S apt update
+echo "$password" | sudo -S apt update -y
 echo "$password" | sudo -S apt upgrade -y
 echo "$password" | sudo -S apt autoremove -y
 echo "Refresh flatpak"
