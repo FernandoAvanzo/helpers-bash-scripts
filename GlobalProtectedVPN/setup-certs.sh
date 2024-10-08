@@ -8,6 +8,14 @@ source "$HELPERS"/root-password.sh
 
 password="$(getRootPassword)"
 
+verify_and_remove_old_certificates() {
+  if [ -d "$SYSTEM_CERTS_FOLDER" ]; then
+    echo "$password" | sudo -S rm -rf "$SYSTEM_CERTS_FOLDER"
+  fi
+}
+
+verify_and_remove_old_certificates
+
 copy_certificates() {
   local file
   for file in "$GP_CERTS_FOLDER"/*.crt; do
@@ -18,7 +26,6 @@ copy_certificates() {
     echo "$password" | sudo -S cp "$GP_CERTS_FOLDER/$filename.crt" "$new_folder"
   done
 }
-
 
 check_and_change_permissions() {
   local file
@@ -33,6 +40,7 @@ check_and_change_permissions() {
   done
 }
 
+verify_and_remove_old_certificates
 copy_certificates
 check_and_change_permissions
 echo "$password" | sudo -S update-ca-certificates
