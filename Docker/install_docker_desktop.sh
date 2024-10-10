@@ -13,7 +13,7 @@ source "$DOCKER"/bin/install_docker_engine.sh
 source "$HELPERS"/root-password.sh
 
 password="$(getRootPassword)"
-url="https://desktop.docker.com/linux/main/amd64/167172/docker-desktop-amd64.deb?_gl=1*1id00j9*_gcl_au*MTEwNTUzMjc4Ni4xNzIzMzkxMTU2*_ga*ODgwNzUwODQ5LjE3MjMzMDQwOTI.*_ga_XJWPQMJYHQ*MTcyNjE2NDc2OS43LjEuMTcyNjE2NTAzNC40Mi4wLjA."
+url="https://desktop.docker.com/linux/main/amd64/170107/docker-desktop-amd64.deb?_gl=1*8xm1jd*_ga*NDA2NDY4MzcyLjE3MjgyNTAyNjk.*_ga_XJWPQMJYHQ*MTcyODU2NTM3Ny4yLjEuMTcyODU2NTk5OS41OS4wLjA."
 dest_path="$HOME/Downloads/docker-desktop-amd64.deb"
 
 install_docker_desktop() {
