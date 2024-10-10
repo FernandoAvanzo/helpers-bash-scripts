@@ -9,6 +9,8 @@ export DOCKER=$HELPERS_BASH_SCRIPTS/Docker
 source "$DOCKER"/bin/remove_old_installation.sh
 # shellcheck source=./bin/install_docker_engine.sh
 source "$DOCKER"/bin/install_docker_engine.sh
+# shellcheck source=./bin/docker-utils.sh
+source "$DOCKER"/bin/docker-utils.sh
 # shellcheck source=./helpers/root-password.sh
 source "$HELPERS"/root-password.sh
 
@@ -40,3 +42,5 @@ else
   wget -O "$dest_path" "$url"
   install_docker_desktop
 fi
+
+check_and_link_docker_sock
