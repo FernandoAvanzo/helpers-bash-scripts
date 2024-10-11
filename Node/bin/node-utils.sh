@@ -41,13 +41,9 @@ install_node_dependencies(){
 install_node_8-2-1(){
     local nvm_install_url
     local nvm_path_install
-    local shell
-    local shellrc
-    shell=$(extract_user_shell)
-    shellrc=".$shellrc"
     nvm_install_url="https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh"
     nvm_path_install="$HOME/.nvm"
-    curl -o- $nvm_install_url | $shell && source "$HOME"/"$shellrc"
+    curl -o- $nvm_install_url | bash && source "$HOME"/.bashrc
     chmod -R a+x "$nvm_path_install"/versions/node/v8.2.1/bin/
     echo "$password" |  sudo -S sudo cp -r "$nvm_path_install"/versions/node/v8.2.1/{bin,lib,share} /usr/local
     npm install -g bower
