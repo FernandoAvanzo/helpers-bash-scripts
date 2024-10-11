@@ -1,7 +1,7 @@
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
-rootProject.name = "helpers-bash-scripts"
+rootProject.name = "MyCli"
 
 include("BashLib")
 include("Cloudquery")
@@ -14,3 +14,5 @@ include("rclone")
 include("ZSH_config_template")
 include("GlobalProtectedVPN")
 include("MicrosoftDefenderLinux")
+include("Node")
+include("MyCompanys")
