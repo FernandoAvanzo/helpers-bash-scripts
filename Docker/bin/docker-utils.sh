@@ -54,6 +54,6 @@ manage_up_docker_service() {
     return 1
   fi
 
-  echo "rclone-mount.service successfully reloaded, enabled, and started."
+  echo "up-docker.service successfully reloaded, enabled, and started."
   return 0
 }
