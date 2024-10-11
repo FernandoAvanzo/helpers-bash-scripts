@@ -30,5 +30,17 @@
 ### Roadmap
 - [ ] Implement a way to get the deb URL of the current version to not change the url each time that a new version is released
 
+### Known issues
+
+- **The service does not set the `/run/docker.sock`**
+  > Check if the service is set to the correct system user.
+  >
+  > Use this command to get some service logs:
+  >
+  > ```bash
+  >   sudo journalctl -u docker-up.service --since "today"
+  > ```
+
+
 ### References
  - [My Notion Sign in | Docker Docs](https://www.notion.so/fernando-avanzo/Sign-in-Docker-Docs-117b3def3e7c812fb8cdd5509cb8478c?pvs=4)
