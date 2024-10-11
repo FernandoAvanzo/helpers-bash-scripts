@@ -17,7 +17,7 @@ purge_all_node_installations() {
         . "$HOME/.nvm/nvm.sh"
         nvm deactivate
         nvm uninstall node
-        rm -rf "$NVM_DIR"
+        echo "$password" |  sudo -S rm -rf "$NVM_DIR"
     fi
 
     echo "$password" |  sudo -S rm -rf /usr/local/{lib/node{,/.npm,_modules},bin,share/man}/npm*
