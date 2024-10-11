@@ -1,0 +1,13 @@
+[Unit]
+Description=up docker default
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+ExecStart=/usr/bin/set-docker-default
+
+[Install]
+WantedBy=multi-user.target
