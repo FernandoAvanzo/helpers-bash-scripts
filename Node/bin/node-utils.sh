@@ -22,7 +22,7 @@ purge_all_node_installations() {
 
     echo "$password" |  sudo -S rm -rf /usr/local/{lib/node{,/.npm,_modules},bin,share/man}/npm*
     echo "$password" |  sudo -S rm -rf /usr/local/bin/node
-    
+
     echo "Node.js installations purged successfully."
 }
 
@@ -44,6 +44,7 @@ install_node_8-2-1(){
     nvm_install_url="https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh"
     nvm_path_install="$HOME/.nvm"
     curl -o- $nvm_install_url | bash && source "$HOME"/.bashrc
+    nvm install 8.2.1
     chmod -R a+x "$nvm_path_install"/versions/node/v8.2.1/bin/
     echo "$password" |  sudo -S cp -r "$nvm_path_install"/versions/node/v8.2.1/{bin,lib,share} /usr/local
     npm install -g bower
