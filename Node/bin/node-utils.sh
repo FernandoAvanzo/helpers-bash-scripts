@@ -48,4 +48,5 @@ install_node_8-2-1(){
     chmod -R a+x "$nvm_path_install"/versions/node/v8.2.1/bin/
     echo "$password" |  sudo -S cp -r "$nvm_path_install"/versions/node/v8.2.1/{bin,lib,share} /usr/local
     npm install -g bower
+    npm install serialport@4.0.7
 }
