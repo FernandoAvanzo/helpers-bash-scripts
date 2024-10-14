@@ -10,4 +10,6 @@ file=$1
 generate_sha1_checksum "$file"
 
 #Install Script
-# echo $(get-root-psw) | sudo -S ln -sf $MY_CLI/BashLib/src/create_integrity.sh /usr/bin/create_integrity_key
+# echo $(get-root-psw) | sudo -S ln -sf $MY_CLI/BashLib/src/create_integrity_key.sh /usr/bin/create_integrity_key
+#Remove script
+# echo $(get-root-psw) | sudo -S rm -f /usr/bin/create_integrity_key
