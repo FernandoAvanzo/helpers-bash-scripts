@@ -17,10 +17,17 @@ generate_sha1_checksum() {
     return 1
   fi
 
-  # Generate SHA-1 checksum
-  local SHA1_CHECKSUM
-  SHA1_CHECKSUM=$(sha1sum "$FILE" | awk '{ print $1 }')
+  # Generate SHA-512 checksum
+  local SHA512_CHECKSUM
+  SHA512_CHECKSUM=$(sha512sum "$FILE" | awk '{ print $1 }')
 
   # Print the checksum
-  echo "SHA-1: $SHA1_CHECKSUM"
+  echo "$SHA512_CHECKSUM"
+}
+
+base64_encrypt() {
+  local input="$1"
+  local encrypted
+  encrypted=$(echo -n "$input" | base64)
+  echo "$encrypted"
 }
