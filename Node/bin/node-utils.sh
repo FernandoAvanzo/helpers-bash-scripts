@@ -45,6 +45,6 @@ install_node_8-2-1(){
     nvm_path_install="$HOME/.nvm"
     curl -o- $nvm_install_url | bash && source "$HOME"/.bashrc
     chmod -R a+x "$nvm_path_install"/versions/node/v8.2.1/bin/
-    echo "$password" |  sudo -S sudo cp -r "$nvm_path_install"/versions/node/v8.2.1/{bin,lib,share} /usr/local
+    echo "$password" |  sudo -S cp -r "$nvm_path_install"/versions/node/v8.2.1/{bin,lib,share} /usr/local
     npm install -g bower
 }
