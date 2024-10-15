@@ -57,3 +57,9 @@ manage_up_docker_service() {
   echo "up-docker.service successfully reloaded, enabled, and started."
   return 0
 }
+
+docker_setup_usermod(){
+  local user
+  user="$USER"
+  echo "$password" | sudo -S usermod -a -G docker "$user"
+}
