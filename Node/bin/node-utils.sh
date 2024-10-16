@@ -35,6 +35,7 @@ install_node_dependencies(){
   echo "$password" |  sudo -S apt install python-pip -y
   echo "$password" |  sudo -S apt install libusb-1.0-0 -y
   echo "$password" |  sudo -S apt install libusb-1.0-0-dev -y
+  echo "$password" |  sudo -S apt install sshpass -y
 }
 
 # shellcheck disable=SC1091,SC1090
