@@ -141,6 +141,60 @@
         n) No (default)
 
    ```
+   - ***create a functions using these commands how reference to improve the reconnection flow of rclone***
+     ```bash
+           ➜  ~ rclone config reconnect remote
+           Error: backend doesn't support reconnect or authorize
+           Usage:
+           rclone config reconnect remote: [flags]
+        
+           Flags:
+           -h, --help   help for reconnect
+        
+           Use "rclone [command] --help" for more information about a command.
+           Use "rclone help flags" for to see the global flags.
+           Use "rclone help backends" for a list of supported services.
+        
+           2024/10/18 16:01:25 CRITICAL: Fatal error: backend doesn't support reconnect or authorize
+           ➜  ~ rclone config reconnect remote:
+           Already have a token - refresh?
+           y) Yes (default)
+           n) No
+           y/n> n
+        
+           Configure this as a Shared Drive (Team Drive)?
+        
+           y) Yes
+           n) No (default)
+           y/n> n
+        
+           ➜  ~ rclone config reconnect remote:
+           Already have a token - refresh?
+           y) Yes (default)
+           n) No
+           y/n> y
+        
+           Use web browser to automatically authenticate rclone with remote?
+           * Say Y if the machine running rclone has a web browser you can use
+             * Say N if running rclone on a (remote) machine without web browser access
+               If not sure try Y. If Y failed, try N.
+        
+           y) Yes (default)
+           n) No
+           y/n> y
+        
+           2024/10/18 16:01:59 NOTICE: Make sure your Redirect URL is set to "http://127.0.0.1:53682/" in your custom config.
+           2024/10/18 16:01:59 NOTICE: If your browser doesn't open automatically go to the following link: http://127.0.0.1:53682/auth?state=BbcIggCoMUCD8cHIk06VYA
+           2024/10/18 16:01:59 NOTICE: Log in and authorize rclone for access
+           2024/10/18 16:01:59 NOTICE: Waiting for code...
+           2024/10/18 16:02:44 NOTICE: Got code
+           Configure this as a Shared Drive (Team Drive)?
+        
+           y) Yes
+           n) No (default)
+           y/n> n
+     
+     ```
 
 ### References
 - [myNotion rclone install](https://www.notion.so/fernando-avanzo/doc-Install-e6e7e3635a4044d5ac7644bbc00d50a5?pvs=4)
