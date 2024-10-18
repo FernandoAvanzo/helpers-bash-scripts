@@ -20,5 +20,25 @@ rclone_reconnect() {
 EOF
 }
 
+
+# Function definition for the reset_token script
+reset_token() {
+  /usr/bin/expect <<-EOF
+    set timeout -1
+
+    spawn rclone config reconnect remote:
+    
+    expect "Already have a token - refresh?"
+    send -- "n\r"
+    
+    expect "Configure this as a Shared Drive (Team Drive)?"
+    send -- "n\r"
+    
+    expect eof
+EOF
+}
+
+# Export the function to make it available to other scripts
+export -f reset_token
 # Export the function to make it available to other scripts
 export -f rclone_reconnect

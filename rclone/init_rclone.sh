@@ -1,5 +1,5 @@
 #!/bin/bash
-export DEV_RCLONE="$HOME/Projects/helpers-bash-scripts/rclone"
+export DEV_RCLONE="$MY_CLI/rclone"
 export RCLONE="$HOME/.Library/rclone"
 
 # shellcheck source=./bin/manage_rclone_service.sh
@@ -15,6 +15,7 @@ verify_avanzo_drive_symlink
 
 if ! rclone ls remote:/BaseDeConhecimento; then
   echo "Reconnect Rclone"
+  reset_token
   rclone_reconnect
 fi
 
