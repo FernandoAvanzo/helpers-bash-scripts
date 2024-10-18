@@ -1,6 +1,6 @@
 #!/bin/bash
 export HELPERS="$MY_CLI/BashLib/src/helpers"
-export DEV_RCLONE="$HOME/Projects/helpers-bash-scripts/rclone"
+export DEV_RCLONE="$MY_CLI/rclone"
 export RCLONE="$HOME/.Library/rclone"
 
 # shellcheck source=./bin/root_user_config.sh
