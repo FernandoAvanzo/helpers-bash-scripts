@@ -13,7 +13,7 @@ check_folder_permissions
 create_systemd_symlink
 verify_avanzo_drive_symlink
 
-if ! rclone ls remote:/BaseDeConhecimento; then
+if ! rclone ls remote:/; then
   echo "Reconnect Rclone"
   reset_token
   rclone_reconnect
