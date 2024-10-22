@@ -157,3 +157,34 @@ edit_rclone_service_file() {
 
   return 0
 }
+
+is_rclone_mounted() {
+    # Define the mount point
+    local -r mount_point="/mnt/data/gdrive/avanzo-drive"
+    local -r remote="remote:"
+
+    # Check if the mount point is in the list of mounted file systems
+    if mount | grep  | grep -q "$mount_point"; then
+        return 0  # true
+    else
+        return 1  # false
+    fi
+}
+
+clean_mount_folder() {
+    local -r mount_point="/mnt/data/gdrive/avanzo-drive"
+
+    if ! is_rclone_mounted; then
+
+        if [ "$(ls -A "$mount_point")" ]; then
+            echo "$mount_point is not empty. Removing all content inside it."
+            if ! echo "$password" | sudo -S rm -rf "$mount_point"/*; then
+                echo "Failed to remove content inside $mount_point."
+                return 1
+            fi
+          else
+            echo "$mount_point is empty."
+        fi
+            
+    fi
+}

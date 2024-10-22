@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Start Rclone
+Comment=Starts the My Service service
+Exec=gnome-terminal -- bash -c "/usr/bin/init_rclone"
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Utilities;
+Encoding=UTF-8
+Name[en_US]=Start Rclone
