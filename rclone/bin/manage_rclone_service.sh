@@ -140,8 +140,8 @@ manage_rclone_service() {
 }
 
 edit_rclone_service_file() {
-  local service_file="$HOME/.Library/rclone/rclone-mount.service"
-  local placeholder="<USER>"
+  local -r service_file="$HOME/.Library/rclone/rclone-mount.service"
+  local -r placeholder="<USER>"
   
   if [ -f "$service_file" ]; then
     if sed -i "s/User=$placeholder/User=$USER/" "$service_file"; then
@@ -152,6 +152,27 @@ edit_rclone_service_file() {
     fi
   else
     echo "Service file $service_file does not exist."
+    return 1
+  fi
+
+  return 0
+}
+
+edit_rclone_desktop_file() {
+  local -r rclone_path="$HOME/.Library/rclone"
+  local -r desktop_file="$rclone_path/rclone.desktop"
+  local -r icon_path="$rclone_path/resource/rclone-icon.png"
+  local -r placeholder="<RCLONE_ICON_PATH>"
+
+  if [ -f "$desktop_file" ]; then
+    if sed -i "s|Icon=$placeholder|Icon=$icon_path|" "$desktop_file"; then
+      echo "Successfully replaced $placeholder with $icon_path in $desktop_file."
+    else
+      echo "Failed to edit the desktop file."
+      return 1
+    fi
+  else
+    echo "Desktop file $desktop_file does not exist."
     return 1
   fi
 

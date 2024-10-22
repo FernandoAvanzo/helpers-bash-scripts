@@ -7,7 +7,7 @@ source "$RCLONE"/bin/manage_rclone_service.sh
 # shellcheck source=./bin/rclone_reconnect.sh
 source "$RCLONE"/bin/rclone_reconnect.sh
 
-if ! is_rclone_mounted; then
+run_rclone_tasks() {
   check_and_create_folder
   verify_folder_ownership
   check_folder_permissions
@@ -22,8 +22,11 @@ if ! is_rclone_mounted; then
   fi
   
   manage_rclone_service
+}
 
-  else
-    echo "Rclone is already mounted"
+if ! is_rclone_mounted; then
+  run_rclone_tasks &
+  echo "Rclone tasks are running in the background"
+else
+  echo "Rclone is already mounted"
 fi
-exit

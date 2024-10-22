@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=Start Rclone
-Comment=Starts the My Service service
+Comment=Starts Rclone mount service
 Exec=gnome-terminal -- bash -c "/usr/bin/init_rclone"
-Icon=utilities-terminal
+Icon=<RCLONE_ICON_PATH>
 Terminal=false
 Type=Application
 Categories=Utilities;
