@@ -184,13 +184,10 @@ is_rclone_mounted() {
     local -r mount_point="/mnt/data/gdrive/avanzo-drive"
     local -r remote="remote:"
 
-    # Check if the mount point is in the list of mounted file systems
-    if mount | grep  | grep -q "$mount_point"; then
-        return 0  # true
-    else
-        return 1  # false
-    fi
+    mount | grep "$remote" | grep -q "$mount_point"
 }
+
+#mount | grep "remote:" | grep -q "/mnt/data/gdrive/avanzo-drive"
 
 clean_mount_folder() {
     local -r mount_point="/mnt/data/gdrive/avanzo-drive"

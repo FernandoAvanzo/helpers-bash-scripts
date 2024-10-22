@@ -30,3 +30,4 @@ if ! is_rclone_mounted; then
 else
   echo "Rclone is already mounted"
 fi
+exit
