@@ -7,7 +7,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=<USER>
-ExecStart=/usr/bin/rclone mount remote: /mnt/data/gdrive/avanzo-drive --vfs-cache-mode full
+ExecStart=/usr/bin/rclone mount remote: /mnt/data/gdrive/avanzo-drive --file-perms 0777 --dir-perms 0777 --vfs-cache-mode full
 
 [Install]
 WantedBy=multi-user.target
