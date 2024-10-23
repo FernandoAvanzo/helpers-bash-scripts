@@ -168,6 +168,7 @@ dmypy.json
 /gradlew.bat
 
 #My Company excluded scripts
+/MyCompanys/AmericanasSA
 /MyCompanys/AmericanasSA/
 /MyCompanys/AmericanasSA/*
 /MyCompanys/AmericanasSA/*.*
