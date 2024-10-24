@@ -70,6 +70,7 @@
 
 - [ ] Automate the download and installation process of Rclone
 - [ ] Automate the creation of the Google Drive remote
+- [ ] Automate the version update of Rclone
 - [ ] Update the `install.sh` script to better reflect its purpose, possibly renaming it to something like `local-setup`
 - [ ] Improve the flags of command `rclone mount` in the service, to improve the cache and sync data
 
