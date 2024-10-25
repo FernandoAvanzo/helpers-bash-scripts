@@ -31,3 +31,22 @@ base64_encrypt() {
   encrypted=$(echo -n "$input" | base64)
   echo "$encrypted"
 }
+
+run_make_target() {
+    local makefile_dir=$1
+    local target=$2
+
+    if [ -z "$makefile_dir" ] || [ -z "$target" ]; then
+        echo "Usage: $0 <makefile_directory> <target>"
+        return 1
+    fi
+
+    # Change to the directory containing the Makefile
+    cd "$makefile_dir" || {
+        echo "Directory $makefile_dir not found"
+        return 1
+    }
+
+    # Run the specified make target
+    make "$target"
+}
