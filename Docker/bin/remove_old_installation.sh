@@ -80,6 +80,11 @@ EOF
     if [ -d /var/lib/containerd ]; then
       echo "$password" | sudo -S rm -rf /var/lib/containerd
     fi
+
+    if echo "$password" | sudo -S [ -L /run/docker.sock ]; then
+        echo "$password" | sudo -S rm -f /run/docker.sock
+    fi
+
   else
     echo "docker-desktop is not installed. Nothing to do."
   fi
