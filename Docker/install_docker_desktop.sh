@@ -13,6 +13,9 @@ source "$DOCKER"/bin/install_docker_engine.sh
 source "$DOCKER"/bin/docker-utils.sh
 # shellcheck source=./helpers/root-password.sh
 source "$HELPERS"/root-password.sh
+# shellcheck source=./../../BashLib/src/helpers/tool_check_script.sh
+source "$HELPERS"/tool_check_script.sh
+
 
 password="$(getRootPassword)"
 url="https://desktop.docker.com/linux/main/amd64/172550/docker-desktop-amd64.deb?_gl=1*7xjit5*_ga*NDA2NDY4MzcyLjE3MjgyNTAyNjk.*_ga_XJWPQMJYHQ*MTcyOTg4MDg5OS41LjEuMTcyOTg4MDkwMC41OS4wLjA."
@@ -23,6 +26,8 @@ install_docker_desktop() {
   echo "$password" | sudo -S dpkg -i ~/Downloads/docker-desktop-amd64.deb
   rm -rf ~/Downloads/docker-desktop-amd64.deb
 }
+
+check_and_install_expect
 
 purge_docker_desktop
 

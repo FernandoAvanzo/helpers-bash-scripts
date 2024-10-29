@@ -52,7 +52,9 @@ function check_and_install_expect() {
         echo "expect could not be found, attempting to install."
         
         # Update the package list and install expect
+	echo "$sudo_password" | sudo -S apt install -y --fix-broken
         echo "$sudo_password" | sudo -S apt update
+	echo "$sudo_password" | sudo -S apt install -y tcl-expect
         echo "$sudo_password" | sudo -S apt install -y expect
     else
         echo "expect is already installed."

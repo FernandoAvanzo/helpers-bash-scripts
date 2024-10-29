@@ -51,6 +51,8 @@ check_docker_setup() {
 }
 
 install_docker_components() {
+echo "$sudo_password" | sudo -S apt install -y --fix-broken
+
   # The command block to be executed by expect
   expect <<EOF
   set timeout -1
@@ -61,6 +63,12 @@ install_docker_components() {
       eof
   }
 EOF
+
+echo "$sudo_password" | sudo -S apt install -y qemu-system-x86
+echo "$sudo_password" | sudo -S apt install -y pass
+echo "$sudo_password" | sudo -S apt install -y uidmap
+echo "$sudo_password" | sudo -S apt install -y docker-ce-cli
+
 }
 
 # Function to check whether Docker was installed and run hello-world container
