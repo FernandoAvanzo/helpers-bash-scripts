@@ -28,15 +28,15 @@ purge_all_node_installations() {
 
 install_node_dependencies(){
   update_system
-  echo "$password" |  sudo -S apt install build-essential -y
-  echo "$password" |  sudo -S apt install git -y
-  echo "$password" |  sudo -S apt install curl  -y
-  echo "$password" |  sudo -S apt install python2.7 -y
-  echo "$password" |  sudo -S apt install python-pip -y
-  echo "$password" |  sudo -S apt install libusb-1.0-0 -y
-  echo "$password" |  sudo -S apt install libusb-1.0-0-dev -y
-  echo "$password" |  sudo -S apt install libgconf-2-4 -y
-  echo "$password" |  sudo -S apt install sshpass -y
+  echo "$password" |  sudo -S apt install -y build-essential
+  echo "$password" |  sudo -S apt install -y git
+  echo "$password" |  sudo -S apt install -y curl
+  echo "$password" |  sudo -S apt install -y python2.7
+  echo "$password" |  sudo -S apt install -y python-pip
+  echo "$password" |  sudo -S apt install -y libusb-1.0-0
+  echo "$password" |  sudo -S apt install -y libusb-1.0-0-dev
+  echo "$password" |  sudo -S apt install -y libgconf-2-4
+  echo "$password" |  sudo -S apt install -y sshpass
 }
 
 # shellcheck disable=SC1091,SC1090
