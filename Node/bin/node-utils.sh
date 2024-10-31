@@ -27,6 +27,9 @@ purge_all_node_installations() {
 }
 
 install_node_dependencies(){
+  local -r python2_link="/usr/bin/python2.7"
+  local -r python_link="/usr/bin/python"
+
   update_system
   echo "$password" |  sudo -S apt install -y build-essential
   echo "$password" |  sudo -S apt install -y git
@@ -37,6 +40,11 @@ install_node_dependencies(){
   echo "$password" |  sudo -S apt install -y libusb-1.0-0-dev
   echo "$password" |  sudo -S apt install -y libgconf-2-4
   echo "$password" |  sudo -S apt install -y sshpass
+
+  if [ ! -L "$python_link" ]; then
+    echo "$password" | sudo -S ln -sf "$python2_link " "$python_link"
+  fi
+
 }
 
 # shellcheck disable=SC1091,SC1090
