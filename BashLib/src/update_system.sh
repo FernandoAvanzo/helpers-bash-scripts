@@ -10,3 +10,4 @@ echo "$password" | sudo -S apt upgrade -y
 echo "$password" | sudo -S apt autoremove -y
 echo "Refresh flatpak"
 flatpak update -y
+flatpak uninstall -y --unused
