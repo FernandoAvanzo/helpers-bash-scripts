@@ -25,6 +25,10 @@ if [ -d /etc/profile.d ]; then
   done
   unset i
 fi
+
+#Default Browser
+export BROWSER=google-chrome
+
 ### Custom Bash Scripts
 export MY_CLI="/home/fernandoavanzo/Projects/helpers-bash-scripts"
 
