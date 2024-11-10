@@ -18,6 +18,13 @@ add_docker_apt_keyrings() {
       eof
   }
 EOF
+
+echo "$password" | sudo -S mkdir -p /etc/apt/keyrings
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+   echo \
+     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+     $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 }
 
 add_docker_repository() {
@@ -64,11 +71,20 @@ echo "$sudo_password" | sudo -S apt install -y --fix-broken
   }
 EOF
 
+echo "$sudo_password" | sudo -S apt install -y lsb-release
+echo "$sudo_password" | sudo -S apt install -y gnupg
+echo "$sudo_password" | sudo -S apt install -y curl
+echo "$sudo_password" | sudo -S apt install -y ca-certificates
 echo "$sudo_password" | sudo -S apt install -y qemu-system-x86
 echo "$sudo_password" | sudo -S apt install -y pass
 echo "$sudo_password" | sudo -S apt install -y uidmap
 echo "$sudo_password" | sudo -S apt install -y docker-ce-cli
-
+echo "$sudo_password" | sudo -S apt install -y docker-ce
+echo "$sudo_password" | sudo -S apt install -y containerd.io
+echo "$sudo_password" | sudo -S apt install -y docker-buildx-plugin
+echo "$sudo_password" | sudo -S apt install -y docker-compose-plugin
+echo "$sudo_password" | sudo -S apt install -y libc++1
+echo "$sudo_password" | sudo -S apt install -y libc++abi1
 }
 
 # Function to check whether Docker was installed and run hello-world container
