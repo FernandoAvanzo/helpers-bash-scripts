@@ -85,11 +85,9 @@ echo "$sudo_password" | sudo -S apt install -y docker-buildx-plugin
 echo "$sudo_password" | sudo -S apt install -y docker-compose-plugin
 echo "$sudo_password" | sudo -S apt install -y libc++1
 echo "$sudo_password" | sudo -S apt install -y clang
-echo "$sudo_password" | sudo -S apt install -y aufs-tools
 echo "$sudo_password" | sudo -S apt install -y cgroupfs-mount
 echo "$sudo_password" | sudo -S apt install -y cgroup-lite
 echo "$sudo_password" | sudo -S apt install -y libxml-simple-perl
-echo "$sudo_password" | sudo -S apt install -y python
 echo "$sudo_password" | sudo -S apt install -y ruby
 echo "$sudo_password" | sudo -S apt install -y samba
 echo "$sudo_password" | sudo -S apt install -y vde2
