@@ -91,6 +91,8 @@ echo "$sudo_password" | sudo -S apt install -y libxml-simple-perl
 echo "$sudo_password" | sudo -S apt install -y ruby
 echo "$sudo_password" | sudo -S apt install -y samba
 echo "$sudo_password" | sudo -S apt install -y vde2
+echo "$sudo_password" | sudo -S apt install -y de2-cryptcab
+echo "$sudo_password" | sudo -S apt install -y qemu-system
 }
 
 # Function to check whether Docker was installed and run hello-world container
