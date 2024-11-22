@@ -6,6 +6,7 @@ source "$HELPERS"/root-password.sh
 
 password="$(getRootPassword)"
 echo "$password" | sudo -S apt update -y
+echo "$password" | sudo -S apt upgrade -y --allow-downgrades
 echo "$password" | sudo -S apt upgrade -y
 echo "$password" | sudo -S apt autoremove -y
 echo "$password" | sudo -S apt clean -y
