@@ -44,3 +44,5 @@
 
 ### References
  - [My Notion Sign in | Docker Docs](https://www.notion.so/fernando-avanzo/Sign-in-Docker-Docs-117b3def3e7c812fb8cdd5509cb8478c?pvs=4)
+ - [Config kvm support](https://docs.docker.com/desktop/setup/install/linux/#kvm-virtualization-support)
+ - [kvm reference](https://linux-kvm.org/page/Main_Page)
