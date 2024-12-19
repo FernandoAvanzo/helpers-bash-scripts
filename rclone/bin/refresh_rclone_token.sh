@@ -7,4 +7,4 @@ source "$RCLONE"/bin/manage_rclone_service.sh
 refresh_token_connection
 
 
-#echo "$(get-root-psw)" | sudo -S ln -sf $RCLONE/bin/refresh_rclone_token.sh /usr/bin/refresh_rclone_token
+#echo "$(get-root-psw)" | sudo -S ln -sf $HOME/.Library/rclone/bin/refresh_rclone_token.sh /usr/bin/refresh_rclone_token
