@@ -14,13 +14,7 @@ run_rclone_tasks() {
   clean_mount_folder
   create_systemd_symlink
   verify_avanzo_drive_symlink
-  
-  if ! rclone ls remote:/; then
-    echo "Reconnect Rclone"
-    reset_token
-    rclone_reconnect
-  fi
-  
+  refresh_token_connection
   manage_rclone_service
 }
 

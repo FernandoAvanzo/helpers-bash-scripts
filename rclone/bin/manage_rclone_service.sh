@@ -4,6 +4,7 @@ export RCLONE="$HOME/.Library/rclone"
 
 # shellcheck source=./../../BashLib/src/helpers/root-password.sh
 source "$HELPERS"/root-password.sh
+source "$RCLONE"/bin/rclone_reconnect.sh
 
 check_and_create_folder() {
   local folder_path
@@ -23,7 +24,6 @@ check_and_create_folder() {
 
   return 0
 }
-
 
 verify_folder_ownership() {
   local owner
@@ -187,8 +187,6 @@ is_rclone_mounted() {
     mount | grep "$remote" | grep -q "$mount_point"
 }
 
-#mount | grep "remote:" | grep -q "/mnt/data/gdrive/avanzo-drive"
-
 clean_mount_folder() {
     local -r mount_point="/mnt/data/gdrive/avanzo-drive"
 
@@ -205,4 +203,12 @@ clean_mount_folder() {
         fi
             
     fi
+}
+
+refresh_token_connection(){
+  if ! rclone ls remote:/; then
+    echo "Reconnect Rclone"
+    reset_token
+    rclone_reconnect
+  fi
 }
