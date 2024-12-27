@@ -9,4 +9,5 @@ echo
 echo "Token refreshed successfully."
 exit
 
+#Install command
 #echo "$(get-root-psw)" | sudo -S ln -sf $HOME/.Library/rclone/bin/refresh_rclone_token.sh /usr/bin/refresh_rclone_token
