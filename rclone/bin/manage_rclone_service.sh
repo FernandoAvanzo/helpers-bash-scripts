@@ -212,3 +212,22 @@ refresh_token_connection(){
     rclone_reconnect
   fi
 }
+
+install_refresh_token_command(){
+    local symlink_path="/usr/bin/refresh_rclone_token"
+
+  if [ ! -L "$symlink_path" ]; then
+      local script_path="$HOME/.Library/rclone/bin/refresh_rclone_token.sh"
+
+    if [ -f "$script_path" ]; then
+      "$(get-root-psw)" | sudo -S ln -sf "$script_path" "$symlink_path"
+      echo "Refresh token command successfully installed."
+
+      else
+        echo "Refresh token command script command not found."
+    fi
+
+    else
+      echo "Refresh token command already installed."
+  fi
+}

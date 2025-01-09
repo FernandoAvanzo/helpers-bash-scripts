@@ -16,6 +16,7 @@ run_rclone_tasks() {
   verify_avanzo_drive_symlink
   refresh_token_connection
   manage_rclone_service
+  install_refresh_token_command
 }
 
 if ! is_rclone_mounted; then
