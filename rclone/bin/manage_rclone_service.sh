@@ -231,3 +231,8 @@ install_refresh_token_command(){
       echo "Refresh token command already installed."
   fi
 }
+
+stop_rclone_service(){
+  "$(get-root-psw)" | sudo -S systemctl stop rclone-mount.service
+  echo "Rclone service stopped."
+}
