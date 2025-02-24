@@ -220,7 +220,7 @@ install_refresh_token_command(){
       local script_path="$HOME/.Library/rclone/bin/refresh_rclone_token.sh"
 
     if [ -f "$script_path" ]; then
-      "$(get-root-psw)" | sudo -S ln -sf "$script_path" "$symlink_path"
+      echo "$(get-root-psw)" | sudo -S ln -sf "$script_path" "$symlink_path"
       echo "Refresh token command successfully installed."
 
       else
@@ -233,6 +233,6 @@ install_refresh_token_command(){
 }
 
 stop_rclone_service(){
-  "$(get-root-psw)" | sudo -S systemctl stop rclone-mount.service
+  echo "$(get-root-psw)" | sudo -S systemctl stop rclone-mount.service
   echo "Rclone service stopped."
 }
