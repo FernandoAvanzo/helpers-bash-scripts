@@ -186,3 +186,10 @@ dmypy.json
 /MyCompanys/PicPay
 /MyCompanys/PicPay/
 /MyCompanys/PicPay/*.*
+/Maths/package-lock.json
+/Maths/node_modules/
+/Maths/node_modules/*
+/Maths/node_modules/*.*
+/Maths/dist
+/Maths/dist/*
+/Maths/dist/*.*
