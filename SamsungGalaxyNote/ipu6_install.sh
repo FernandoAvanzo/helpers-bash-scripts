@@ -20,7 +20,7 @@ REPOS=(
 
 # Import required helpers
 export PROJECTS=$HOME/Projects/
-export HELPERS_BASH_SCRIPTS=$MY_CLI
+export HELPERS_BASH_SCRIPTS="/home/fernandoavanzo/Projects/helpers-bash-scripts"
 export HELPERS="$HELPERS_BASH_SCRIPTS/BashLib/src/helpers"
 
 # shellcheck source=./helpers/root-password.sh
