@@ -27,7 +27,7 @@ export HELPERS="$HELPERS_BASH_SCRIPTS/BashLib/src/helpers"
 source "$HELPERS"/root-password.sh
 
 # Get the root password once at the beginning
-password="$(getRootPassword)"
+password="$(get-root-psw)"
 
 # Logging function
 log() {
