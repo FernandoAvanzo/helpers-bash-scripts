@@ -9,9 +9,6 @@ STACK_DIR="/opt/ipu6"
 BACKUP_DIR="/opt/ipu6-backup-$(date +%F-%H%M)"
 IPU_FW_DIR="/lib/firmware/intel/ipu"
 LOG_FILE="/var/log/ipu6-install.log"
-HEALTH_CHECK_SCRIPT="/opt/ipu6/ipu6_health_check.sh"
-
-# Repository configuration with version pinning option
 REPOS=(
   "https://github.com/intel/ipu6-drivers.git"
   "https://github.com/intel/ipu6-camera-bins.git"
@@ -19,98 +16,137 @@ REPOS=(
   "https://github.com/intel/icamerasrc.git#icamerasrc_slim_api"
 )
 
-# System requirements check
-check_system_requirements() {
-    log "==> Checking system requirements"
-    
-    # Check kernel version
-    local kernel_version
-    kernel_version=$(uname -r | cut -d. -f1-2)
-    local min_version="6.8"
-    
-    if ! awk "BEGIN {exit !($kernel_version >= $min_version)}"; then
-        die "Kernel version $kernel_version is too old. Minimum required: $min_version"
-    fi
-    
-    # Check available disk space (need ~2GB)
-    local available_space
-    available_space=$(df /opt | awk 'NR==2 {print $4}')
-    if [[ $available_space -lt 2000000 ]]; then  # 2GB in KB
-        die "Insufficient disk space in /opt. Need at least 2GB"
-    fi
-    
-    # Check Secure Boot status
-    if [[ -d /sys/firmware/efi/efivars ]] && command -v mokutil >/dev/null 2>&1; then
-        if mokutil --sb-state | grep -q "SecureBoot enabled"; then
-            print_warn "Secure Boot is enabled. You may need to sign the DKMS module or disable Secure Boot"
-        fi
-    fi
-    
-    log "System requirements check passed"
+# Logging function
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*" | tee -a "$LOG_FILE"
 }
 
-# Enhanced dependency installation
-install_dependencies() {
-    log "==> Installing build dependencies"
-    
-    # Update package list with retry
-    local retry_count=0
-    while ! apt update && [[ $retry_count -lt 3 ]]; do
-        log "Package update failed, retrying... ($((++retry_count))/3)"
-        sleep 5
-    done
-    
-    [[ $retry_count -lt 3 ]] || die "Failed to update package list after 3 attempts"
-    
-    # Install packages with version checking
-    local packages=(
-        "dkms" "build-essential" "git" "cmake" "ninja-build" "meson"
-        "linux-headers-$(uname -r)"
-        "libexpat-dev" "automake" "libtool" "libdrm-dev"
-        "libgstreamer1.0-dev" "libgstreamer-plugins-base1.0-dev"
-        "gstreamer1.0-plugins-base" "gstreamer1.0-plugins-good"
-        "gstreamer1.0-plugins-bad" "gstreamer1.0-libav" "gstreamer1.0-tools"
-        "pkg-config" "v4l-utils" "media-ctl"
-    )
-    
-    apt install -y "${packages[@]}" || die "Failed to install dependencies"
-    log "Dependencies installed successfully"
+# Enhanced error handling
+die() { 
+    log "ERROR: $*" >&2
+    cleanup_on_error
+    exit 1
 }
 
-# Post-installation steps
-post_install_setup() {
-    log "==> Running post-installation setup"
+# Cleanup function
+cleanup_on_error() {
+    log "==> Cleaning up after error..."
+    if [[ -d "$STACK_DIR" ]]; then
+        rm -rf "$STACK_DIR" || true
+    fi
+    if [[ -d "/usr/src/ipu6-drivers-$IPU_VERSION" ]]; then
+        dkms remove -m ipu6-drivers -v "$IPU_VERSION" --all || true
+        rm -rf "/usr/src/ipu6-drivers-$IPU_VERSION" || true
+    fi
+}
+
+# Validation functions
+verify_build() {
+    local target="$1"
+    if [[ ! -d "$target" ]]; then
+        die "Build failed: $target not found"
+    fi
+    log "Build verification passed for: $target"
+}
+
+validate_repo() {
+    local repo_dir="$1"
+    if [[ ! -f "$repo_dir/.git/config" ]]; then
+        die "Invalid repository: $repo_dir"
+    fi
+    if ! git -C "$repo_dir" status >/dev/null 2>&1; then
+        die "Repository corrupted: $repo_dir"
+    fi
+    log "Repository validation passed for: $repo_dir"
+}
+
+verify_cmake_build() {
+    local build_dir="$1"
+    if [[ ! -f "$build_dir/Makefile" ]]; then
+        die "CMake configuration failed in $build_dir"
+    fi
+    if ! make -C "$build_dir" --dry-run >/dev/null 2>&1; then
+        die "Build system verification failed in $build_dir"
+    fi
+    log "CMake build verification passed for: $build_dir"
+}
+
+# shellcheck disable=SC2155
+verify_firmware_files() {
+    local fw_source="${STACK_DIR}/ipu6-camera-bins/lib/firmware/intel/ipu"
+    if [[ ! -d "$fw_source" ]]; then
+        die "Firmware source directory not found: $fw_source"
+    fi
+    local fw_count=$(find "$fw_source" -name "*.bin" | wc -l)
+    if [[ $fw_count -eq 0 ]]; then
+        die "No firmware files found in $fw_source"
+    fi
+    log "Found $fw_count firmware files"
+}
+
+# Comprehensive backup function
+backup_system() {
+    log "==> Creating comprehensive backup in $BACKUP_DIR"
+    mkdir -p "$BACKUP_DIR"/{firmware,libs,dkms}
     
-    # Update library cache
-    ldconfig || die "ldconfig failed"
-    
-    # Generate module dependencies
-    depmod -a || log "depmod failed (non-critical)"
-    
-    # Copy health check script
-    if [[ -f "$(dirname "$0")/ipu6_health_check.sh" ]]; then
-        cp "$(dirname "$0")/ipu6_health_check.sh" "$HEALTH_CHECK_SCRIPT"
-        chmod +x "$HEALTH_CHECK_SCRIPT"
-        log "Health check script installed to $HEALTH_CHECK_SCRIPT"
+    # Backup firmware
+    if [[ -d "$IPU_FW_DIR" ]]; then
+        cp -a "$IPU_FW_DIR" "$BACKUP_DIR/firmware/" || true
+        log "Firmware backed up"
     fi
     
-    # Create convenient aliases/scripts
-    cat > "/usr/local/bin/ipu6-test" << 'EOF'
-#!/bin/bash
-gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink
-EOF
-    chmod +x "/usr/local/bin/ipu6-test"
+    # Backup libraries
+    find /usr/lib -name "libipu*" -exec cp -a {} "$BACKUP_DIR/libs/" \; 2>/dev/null || true
+    find /usr/lib/gstreamer-1.0 -name "libicamerasrc*" -exec cp -a {} "$BACKUP_DIR/libs/" \; 2>/dev/null || true
     
-    log "Post-installation setup completed"
+    # Backup DKMS status
+    dkms status ipu6-drivers 2>/dev/null > "$BACKUP_DIR/dkms/status.txt" || true
+    log "System backup completed"
 }
 
-check_system_requirements
+# Set up error handling
+trap cleanup_on_error ERR
 
-install_dependencies
+# Privilege check
+[[ $EUID -eq 0 ]] || die "Run as root (sudo)."
 
-post_install_setup
+# Initialize logging
+log "==> Starting IPU6 installation (version: $IPU_VERSION)"
 
-trap - ERR
+log "==> Installing build dependencies"
+apt update || die "Failed to update package list"
+apt install -y dkms build-essential git cmake ninja-build meson \
+  linux-headers-"$(uname -r)" \
+  libexpat-dev automake libtool libdrm-dev libgstreamer1.0-dev \
+  libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav \
+  pkg-config || die "Failed to install dependencies"
+
+log "==> Creating working directory ${STACK_DIR}"
+mkdir -p "$STACK_DIR" || die "Failed to create working directory"
+cd "$STACK_DIR" || die "Failed to enter working directory"
+
+log "==> Cloning required repositories"
+for r in "${REPOS[@]}"; do
+  url=${r%%#*}; br=${r##*#}
+  dir=$(basename "${url%.git}")
+  
+  if [[ ! -d "$dir" ]]; then
+    log "Cloning $url"
+    git clone "$url" "$dir" || die "Failed to clone $url"
+  fi
+  
+  validate_repo "$dir"
+  
+  if [[ $br != "$r" ]]; then
+    log "Checking out branch $br for $dir"
+    git -C "$dir" fetch origin "$br" || die "Failed to fetch branch $br"
+    git -C "$dir" checkout "$br" || die "Failed to checkout branch $br"
+  fi
+done
+
+# Create a comprehensive backup
+backup_system
 
 log "==> Installation completed successfully ✓"
 log "Backup created at: $BACKUP_DIR"
@@ -122,3 +158,7 @@ echo "1. Reboot your system"
 echo "2. Run the health check: sudo bash $HEALTH_CHECK_SCRIPT"
 echo "3. Test the camera: ipu6-test"
 echo "   or: gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink"
+
+echo
+echo "==> Testing iCamerasrc GStreamer plugin"
+gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink
