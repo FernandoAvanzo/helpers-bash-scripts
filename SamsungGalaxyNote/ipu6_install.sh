@@ -188,7 +188,6 @@ setup_development_environment() {
         pkg-config \
         gstreamer1.0-tools \
         v4l-utils \
-        media-ctl \
         || die "Failed to install development dependencies"
     
     # Verify critical headers are available
