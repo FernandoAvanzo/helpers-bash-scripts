@@ -151,7 +151,62 @@ verify_firmware_files() {
     log "Found $fw_count firmware files"
 }
 
-# FIXED: Enhanced IA_IMAGING libraries installation with comprehensive header installation
+# ENHANCED: Fix development environment setup
+setup_development_environment() {
+    log "==> Setting up comprehensive development environment"
+    
+    # Update package cache first
+    echo "$password" | sudo -S apt update || die "Failed to update package list"
+    
+    # Install comprehensive development packages
+    log "Installing comprehensive build dependencies..."
+    echo "$password" | sudo -S apt install -y \
+        build-essential \
+        libc6-dev \
+        linux-libc-dev \
+        manpages-dev \
+        gcc-11 \
+        g++-11 \
+        libc6-dev-i386 \
+        linux-headers-"$(uname -r)" \
+        linux-headers-generic \
+        dkms \
+        git \
+        cmake \
+        ninja-build \
+        meson \
+        libexpat1-dev \
+        automake \
+        libtool \
+        libdrm-dev \
+        libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev \
+        gstreamer1.0-plugins-base \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-libav \
+        pkg-config \
+        gstreamer1.0-tools \
+        v4l-utils \
+        media-ctl \
+        || die "Failed to install development dependencies"
+    
+    # Verify critical headers are available
+    if [[ ! -f "/usr/include/stdlib.h" ]]; then
+        log "WARNING: stdlib.h still not found, attempting repair..."
+        echo "$password" | sudo -S apt install --reinstall -y libc6-dev build-essential || die "Failed to repair build environment"
+    fi
+    
+    # Set up proper compiler environment
+    export CC=gcc-11
+    export CXX=g++-11
+    export CFLAGS="-I/usr/include"
+    export CXXFLAGS="-I/usr/include"
+    
+    log "Development environment setup completed"
+}
+
+# Enhanced IA_IMAGING libraries installation
 install_ia_imaging_libs() {
     log "==> Installing IA_IMAGING libraries and headers"
     
@@ -177,7 +232,6 @@ install_ia_imaging_libs() {
             log "Found .so files: $lib_files"
         else
             log "WARNING: Skipping IA_IMAGING library installation - no library files found"
-            log "This may cause HAL build issues, but continuing..."
             return 0
         fi
     fi
@@ -217,8 +271,6 @@ install_ia_imaging_libs() {
             done
         fi
         
-        # Additional header search and installation
-        log "Searching for additional headers in camera-bins..."
         find "$include_dir" -name "*.h" -type f | while read -r header_file; do
             header_name=$(basename "$header_file")
             log "Installing header: $header_name"
@@ -229,12 +281,12 @@ install_ia_imaging_libs() {
         die "CRITICAL: No include directory found at $include_dir - HAL build will fail"
     fi
     
-    # ENHANCED: Create comprehensive pkg-config files
+    # Create pkg-config files
     local pkgconfig_dir="/usr/lib/pkgconfig"
     echo "$password" | sudo -S mkdir -p "$pkgconfig_dir"
     
-    # Create enhanced pkg-config file for ia_imaging-ipu6
-    log "Creating comprehensive pkg-config file for ia_imaging-ipu6"
+    # Create an enhanced pkg-config file for ia_imaging-ipu6
+    log "Creating pkg-config file for ia_imaging-ipu6"
     echo "$password" | sudo -S tee "$pkgconfig_dir/ia_imaging-ipu6.pc" > /dev/null << 'EOF'
 prefix=/usr
 exec_prefix=${prefix}
@@ -321,14 +373,8 @@ log "==> Starting IPU6 installation (version: $IPU_VERSION)"
 # Check for existing installations
 check_existing_dkms
 
-log "==> Installing build dependencies"
-echo "$password" | sudo -S apt update || die "Failed to update package list"
-echo "$password" | sudo -S apt install -y dkms build-essential git cmake ninja-build meson \
-  linux-headers-"$(uname -r)" \
-  libexpat1-dev automake libtool libdrm-dev libgstreamer1.0-dev \
-  libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-base \
-  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav \
-  pkg-config || die "Failed to install dependencies"
+# CRITICAL FIX: Setup development environment FIRST
+setup_development_environment
 
 log "==> Creating working directory ${STACK_DIR}"
 echo "$password" | sudo -S mkdir -p "$STACK_DIR" || die "Failed to create working directory"
@@ -383,7 +429,7 @@ echo "$password" | sudo -S dkms install -m ipu6-drivers -v "$IPU_VERSION" || die
 log "DKMS module installed successfully"
 
 ##############################################################################
-# 2. Firmware + proprietary libs (MOVED BEFORE HAL)
+# 2. Firmware + proprietary libs
 ##############################################################################
 log "==> Installing IPU6 firmware and proprietary libraries"
 
@@ -410,7 +456,7 @@ cd "${STACK_DIR}/ipu6-camera-hal" || die "Failed to enter HAL directory"
 mkdir -p build || die "Failed to create HAL build directory"
 cd build || die "Failed to enter HAL build directory"
 
-# ENHANCED: Set comprehensive environment variables for library and header detection
+# Set comprehensive environment variables
 export PKG_CONFIG_PATH="/usr/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export LD_LIBRARY_PATH="/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export CMAKE_PREFIX_PATH="/usr${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
@@ -429,6 +475,8 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_PREFIX_PATH="/usr" \
       -DCMAKE_LIBRARY_PATH="/usr/lib" \
       -DCMAKE_INCLUDE_PATH="/usr/include;/usr/include/ia_imaging" \
+      -DCMAKE_C_COMPILER=gcc-11 \
+      -DCMAKE_CXX_COMPILER=g++-11 \
       -DCMAKE_C_FLAGS="-I/usr/include -I/usr/include/ia_imaging" \
       -DCMAKE_CXX_FLAGS="-I/usr/include -I/usr/include/ia_imaging" \
       .. 2>&1 | tee -a "$LOG_FILE" || die "CMake configuration failed for HAL"
@@ -468,6 +516,8 @@ log "Running autogen.sh..."
 # Configure
 log "Configuring icamerasrc..."
 CPPFLAGS="-I/usr/include -I/usr/include/ia_imaging" \
+CC=gcc-11 \
+CXX=g++-11 \
 ./configure --prefix=/usr --enable-gstdrmformat=yes 2>&1 | tee -a "$LOG_FILE" || die "Configure failed for icamerasrc"
 
 # Build
@@ -499,8 +549,7 @@ echo
 echo "==> Next steps:"
 echo "1. Reboot your system"
 echo "2. Run the health check: sudo bash $STACK_DIR/ipu6_health_check.sh"
-echo "3. Test the camera: ipu6-test"
-echo "   or: gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink"
+echo "3. Test the camera: gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink"
 
 echo
 echo "==> Testing iCamerasrc GStreamer plugin"
