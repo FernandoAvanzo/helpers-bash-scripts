@@ -7,7 +7,7 @@ set -euo pipefail
 # Configuration
 IPU_VERSION="${IPU_VERSION:-$(date +%Y%m%d)}"
 STACK_DIR="/opt/ipu6"
-BACKUP_DIR="/opt/ipu6-backup-$(date +%F-%H%M)"
+BACKUP_DIR="/opt/ipu6-bkp/ipu6-backup-$(date +%F-%H%M)"
 IPU_FW_DIR="/lib/firmware/intel/ipu"
 LOG_FILE="/var/log/ipu6-install.log"
 HEALTH_CHECK_SCRIPT="/opt/ipu6/ipu6_health_check.sh"
@@ -20,7 +20,7 @@ REPOS=(
 
 # Import required helpers
 export PROJECTS=$HOME/Projects/
-export HELPERS_BASH_SCRIPTS=$PROJECTS/helpers-bash-scripts
+export HELPERS_BASH_SCRIPTS=$MY_CLI
 export HELPERS="$HELPERS_BASH_SCRIPTS/BashLib/src/helpers"
 
 # shellcheck source=./helpers/root-password.sh
