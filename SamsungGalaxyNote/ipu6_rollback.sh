@@ -5,7 +5,7 @@ set -euo pipefail
 
 find_backup_dir() {
     local backup_dir
-    backup_dir=$(find /opt -maxdepth 1 -name "ipu6-backup-*" -type d -printf '%T@ %p\n' 2>/dev/null | 
+    backup_dir=$(find /opt/ipu6-bkp/ -maxdepth 1 -name "ipu6-backup-*" -type d -printf '%T@ %p\n' 2>/dev/null |
                 sort -nr | head -n1 | cut -d' ' -f2-)
     echo "$backup_dir"
 }

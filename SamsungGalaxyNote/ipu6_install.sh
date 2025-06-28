@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091
+# shellcheck disable=SC3010,SC1091,SC2216,SC2155,SC2259
+# bashsupport disable=BP2001
+# shellcheck disable=SC1091,SC2216,SC2155
 # Build-and-install Intel IPU6 driver stack on Pop!_OS 22.04
 # Tested on kernel 6.12.10 and Galaxy Book4 Ultra 2025-06-28
 set -euo pipefail
 
 # Configuration
-IPU_VERSION="${IPU_VERSION:-$(date +%Y%m%d)}"
+IPU_VERSION="${IPU_VERSION:-$(date +%Y%m%d-%H%M)}"
 STACK_DIR="/opt/ipu6"
 BACKUP_DIR="/opt/ipu6-bkp/ipu6-backup-$(date +%F-%H%M)"
 IPU_FW_DIR="/lib/firmware/intel/ipu"
@@ -29,14 +31,16 @@ source "$HELPERS"/root-password.sh
 # Get the root password once at the beginning
 password="$(get-root-psw)"
 
-# Logging function
+# Logging function with explicit flushing
 log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*" | tee -a "$LOG_FILE"
+    local message="$(date '+%Y-%m-%d %H:%M:%S') - $*"
+    echo "$message" | tee -a "$LOG_FILE"
+    sync  # Force flush to disk
 }
 
-# Enhanced error handling
+# Enhanced error handling with stack trace
 die() { 
-    log "ERROR: $*" >&2
+    log "ERROR: $* (Line: ${BASH_LINENO[0]}, Function: ${FUNCNAME[1]})" >&2
     cleanup_on_error
     exit 1
 }
@@ -44,12 +48,50 @@ die() {
 # Cleanup function
 cleanup_on_error() {
     log "==> Cleaning up after error..."
-    if [[ -d "$STACK_DIR" ]]; then
-        echo "$password" | sudo -S rm -rf "$STACK_DIR" || true
+    # Clean up any partial DKMS installation
+    cleanup_dkms_modules
+    log "Cleanup completed. Working directory preserved at $STACK_DIR for debugging."
+}
+
+# DKMS cleanup function with better error handling
+cleanup_dkms_modules() {
+    log "Cleaning up DKMS modules..."
+    
+    # Find all ipu6-drivers versions
+    local versions
+    if versions=$(echo "$password" | sudo -S dkms status ipu6-drivers 2>/dev/null | cut -d',' -f1 | cut -d':' -f2 | tr -d ' '); then
+        for version in $versions; do
+            if [[ -n "$version" ]]; then
+                log "Removing DKMS module ipu6-drivers version $version"
+                echo "$password" | sudo -S dkms remove -m ipu6-drivers -v "$version" --all 2>/dev/null || true
+                echo "$password" | sudo -S rm -rf "/usr/src/ipu6-drivers-$version" 2>/dev/null || true
+            fi
+        done
     fi
-    if [[ -d "/usr/src/ipu6-drivers-$IPU_VERSION" ]]; then
-        echo "$password" | sudo -S dkms remove -m ipu6-drivers -v "$IPU_VERSION" --all || true
-        echo "$password" | sudo -S rm -rf "/usr/src/ipu6-drivers-$IPU_VERSION" || true
+}
+
+# Check and handle existing DKMS installations
+check_existing_dkms() {
+    log "==> Checking for existing DKMS installations"
+    
+    local existing_status
+    if existing_status=$(echo "$password" | sudo -S dkms status ipu6-drivers 2>/dev/null); then
+        log "Found existing DKMS installations:"
+        log "$existing_status"
+        
+        # Check if we have the exact version already installed
+        if echo "$existing_status" | grep -q "ipu6-drivers-$IPU_VERSION.*installed"; then
+            log "Version $IPU_VERSION is already installed and active"
+            read -p "Do you want to reinstall? This will remove the existing version. (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                log "Installation cancelled by user"
+                exit 0
+            fi
+        fi
+        
+        # Clean up all existing versions
+        cleanup_dkms_modules
     fi
 }
 
@@ -97,6 +139,105 @@ verify_firmware_files() {
     log "Found $fw_count firmware files"
 }
 
+# FIXED: Enhanced IA_IMAGING libraries installation with a corrected pkg-config file
+install_ia_imaging_libs() {
+    log "==> Installing IA_IMAGING libraries"
+    
+    local lib_dir="${STACK_DIR}/ipu6-camera-bins/lib"
+    local include_dir="${STACK_DIR}/ipu6-camera-bins/include"
+    
+    # Enhanced directory validation
+    if [[ ! -d "$lib_dir" ]]; then
+        die "Camera bins lib directory not found: $lib_dir"
+    fi
+    
+    # Check if library files actually exist
+    local lib_files
+    if ! lib_files=$(find "$lib_dir" -name "lib*" -type f 2>/dev/null); then
+        die "No library files found in $lib_dir"
+    fi
+    
+    if [[ -z "$lib_files" ]]; then
+        log "WARNING: No IA_IMAGING library files found, trying alternative approach..."
+        
+        # Try to find libraries in subdirectories
+        if lib_files=$(find "$lib_dir" -name "*.so*" -type f 2>/dev/null); then
+            log "Found .so files: $lib_files"
+        else
+            log "WARNING: Skipping IA_IMAGING library installation - no library files found"
+            log "This may cause HAL build issues, but continuing..."
+            return 0
+        fi
+    fi
+    
+    # Install libraries with explicit error checking
+    log "Installing library files: $lib_files"
+    for lib_file in $lib_files; do
+        if ! echo "$password" | sudo -S cp -v "$lib_file" /usr/lib/ 2>&1 | tee -a "$LOG_FILE"; then
+            die "Failed to copy library: $lib_file"
+        fi
+    done
+    
+    # Install headers if available
+    if [[ -d "$include_dir" ]]; then
+        log "Installing header files from $include_dir"
+        echo "$password" | sudo -S mkdir -p /usr/include/ia_imaging
+        if ! echo "$password" | sudo -S cp -r "$include_dir"/* /usr/include/ia_imaging/ 2>&1 | tee -a "$LOG_FILE"; then
+            log "WARNING: Failed to install header files, continuing..."
+        fi
+    else
+        log "WARNING: No include directory found at $include_dir"
+    fi
+    
+    # Create pkg-config file for ia_imaging-ipu6 (FIXED SYNTAX)
+    local pkgconfig_dir="/usr/lib/pkgconfig"
+    echo "$password" | sudo -S mkdir -p "$pkgconfig_dir"
+    
+    log "Creating pkg-config file for ia_imaging-ipu6"
+    echo "$password" | sudo -S tee "$pkgconfig_dir/ia_imaging-ipu6.pc" > /dev/null << 'EOF'
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: ia_imaging-ipu6
+Description: Intel IA Imaging library for IPU6
+Version: 1.0.0
+Libs: -L${libdir} -lia_imaging
+Cflags: -I${includedir}
+EOF
+
+    # Verify the pkg-config file was created correctly
+    if echo "$password" | sudo -S test -f "$pkgconfig_dir/ia_imaging-ipu6.pc"; then
+        log "pkg-config file created successfully"
+        # Test the pkg-config file
+        if pkg-config --exists ia_imaging-ipu6 2>/dev/null; then
+            log "pkg-config validation passed"
+        else
+            log "WARNING: pkg-config validation failed, but continuing..."
+        fi
+    else
+        log "WARNING: Failed to create pkg-config file, continuing..."
+    fi
+
+    # Also copy existing pkg-config files from camera-bins
+    if [[ -d "$lib_dir/pkgconfig" ]]; then
+        log "Installing existing pkg-config files from camera-bins"
+        echo "$password" | sudo -S cp -v "$lib_dir/pkgconfig"/*.pc "$pkgconfig_dir/" 2>&1 | tee -a "$LOG_FILE" || true
+    fi
+
+    # Update library cache with error handling
+    log "Updating library cache..."
+    if ! echo "$password" | sudo -S ldconfig 2>&1 | tee -a "$LOG_FILE"; then
+        die "ldconfig failed"
+    fi
+    
+    # Update pkg-config cache
+    export PKG_CONFIG_PATH="/usr/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    
+    log "IA_IMAGING libraries installation completed"
+}
+
 # Comprehensive backup function
 backup_system() {
     log "==> Creating comprehensive backup in $BACKUP_DIR"
@@ -111,6 +252,7 @@ backup_system() {
     # Backup libraries
     echo "$password" | sudo -S find /usr/lib -name "libipu*" -exec cp -a {} "$BACKUP_DIR/libs/" \; 2>/dev/null || true
     echo "$password" | sudo -S find /usr/lib/gstreamer-1.0 -name "libicamerasrc*" -exec cp -a {} "$BACKUP_DIR/libs/" \; 2>/dev/null || true
+    echo "$password" | sudo -S find /usr/lib -name "libia_*" -exec cp -a {} "$BACKUP_DIR/libs/" \; 2>/dev/null || true
     
     # Backup DKMS status
     echo "$password" | sudo -S sh -c "dkms status ipu6-drivers 2>/dev/null > '$BACKUP_DIR/dkms/status.txt'" || true
@@ -130,6 +272,9 @@ echo "$password" | sudo -S touch "$LOG_FILE"
 echo "$password" | sudo -S chown "$(whoami):$(whoami)" "$LOG_FILE"
 
 log "==> Starting IPU6 installation (version: $IPU_VERSION)"
+
+# Check for existing installations
+check_existing_dkms
 
 log "==> Installing build dependencies"
 echo "$password" | sudo -S apt update || die "Failed to update package list"
@@ -154,6 +299,9 @@ for r in "${REPOS[@]}"; do
   if [[ ! -d "$dir" ]]; then
     log "Cloning $url"
     git clone "$url" "$dir" || die "Failed to clone $url"
+  else
+    log "Repository $dir already exists, updating..."
+    git -C "$dir" fetch --all || die "Failed to update $dir"
   fi
   
   validate_repo "$dir"
@@ -190,7 +338,7 @@ echo "$password" | sudo -S dkms install -m ipu6-drivers -v "$IPU_VERSION" || die
 log "DKMS module installed successfully"
 
 ##############################################################################
-# 2. Firmware + proprietary libs
+# 2. Firmware + proprietary libs (MOVED BEFORE HAL)
 ##############################################################################
 log "==> Installing IPU6 firmware and proprietary libraries"
 
@@ -204,22 +352,8 @@ echo "$password" | sudo -S mkdir -p "$IPU_FW_DIR" || die "Failed to create firmw
 log "Installing firmware files to $IPU_FW_DIR"
 echo "$password" | sudo -S cp "${STACK_DIR}/ipu6-camera-bins/lib/firmware/intel/ipu/"*.bin "$IPU_FW_DIR/" || die "Failed to copy firmware files"
 
-# Install proprietary libraries
-log "Installing proprietary libraries"
-pushd "${STACK_DIR}/ipu6-camera-bins/lib" >/dev/null || die "Failed to enter camera-bins lib directory"
-
-# Create symlinks for libraries (required by HAL)
-for lib in lib*.so.*; do 
-    if [[ -f "$lib" ]]; then
-        ln -sf "$lib" "${lib%.*}" || die "Failed to create symlink for $lib"
-    fi
-done
-
-# Copy libraries to a system
-echo "$password" | sudo -S cp -P lib* /usr/lib/ || die "Failed to copy libraries to /usr/lib"
-log "Proprietary libraries installed"
-
-popd >/dev/null
+# Install IA_IMAGING libraries (CRITICAL: Before HAL build) - FIXED
+install_ia_imaging_libs
 
 ##############################################################################
 # 3. Build & install user-space HAL
@@ -231,7 +365,12 @@ cd "${STACK_DIR}/ipu6-camera-hal" || die "Failed to enter HAL directory"
 mkdir -p build || die "Failed to create HAL build directory"
 cd build || die "Failed to enter HAL build directory"
 
-# Configure with CMake
+# Set environment variables for library detection
+export PKG_CONFIG_PATH="/usr/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# Configure with CMake (updated flags for better compatibility)
+log "Configuring HAL with CMake..."
 cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=/usr \
       -DCMAKE_INSTALL_LIBDIR=lib \
@@ -239,16 +378,21 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DBUILD_CAMHAL_PLUGIN=ON \
       -DIPU_VERSIONS="ipu6;ipu6ep;ipu6epmtl" \
       -DUSE_PG_LITE_PIPE=ON \
-      .. || die "CMake configuration failed for HAL"
+      -DCMAKE_PREFIX_PATH="/usr" \
+      -DCMAKE_LIBRARY_PATH="/usr/lib" \
+      -DCMAKE_INCLUDE_PATH="/usr/include" \
+      .. 2>&1 | tee -a "$LOG_FILE" || die "CMake configuration failed for HAL"
 
 verify_cmake_build "."
 
 # Build HAL
-make -j"$(nproc)" || die "HAL build failed"
+log "Building HAL..."
+make -j"$(nproc)" 2>&1 | tee -a "$LOG_FILE" || die "HAL build failed"
 log "HAL built successfully"
 
 # Install HAL
-echo "$password" | sudo -S make install || die "HAL installation failed"
+log "Installing HAL..."
+echo "$password" | sudo -S make install 2>&1 | tee -a "$LOG_FILE" || die "HAL installation failed"
 log "HAL installed successfully"
 
 ##############################################################################
@@ -261,22 +405,33 @@ cd "${STACK_DIR}/icamerasrc" || die "Failed to enter icamerasrc directory"
 export CHROME_SLIM_CAMHAL=ON
 
 # Generate configure script
-./autogen.sh || die "autogen.sh failed for icamerasrc"
+log "Running autogen.sh..."
+./autogen.sh 2>&1 | tee -a "$LOG_FILE" || die "autogen.sh failed for icamerasrc"
 
 # Configure
-./configure --prefix=/usr --enable-gstdrmformat=yes || die "Configure failed for icamerasrc"
+log "Configuring icamerasrc..."
+./configure --prefix=/usr --enable-gstdrmformat=yes 2>&1 | tee -a "$LOG_FILE" || die "Configure failed for icamerasrc"
 
 # Build
-make -j"$(nproc)" || die "icamerasrc build failed"
+log "Building icamerasrc..."
+make -j"$(nproc)" 2>&1 | tee -a "$LOG_FILE" || die "icamerasrc build failed"
 log "icamerasrc built successfully"
 
 # Install
-echo "$password" | sudo -S make install || die "icamerasrc installation failed"
+log "Installing icamerasrc..."
+echo "$password" | sudo -S make install 2>&1 | tee -a "$LOG_FILE" || die "icamerasrc installation failed"
 log "icamerasrc installed successfully"
 
 # Update library cache
 echo "$password" | sudo -S ldconfig || die "ldconfig failed"
 log "Library cache updated"
+
+# Copy a health check script to the working directory
+# shellcheck disable=SC3010
+if [[ -f "$HEALTH_CHECK_SCRIPT" ]]; then
+    echo "$password" | sudo -S cp "$HEALTH_CHECK_SCRIPT" "$STACK_DIR/" || log "Failed to copy health check script"
+    echo "$password" | sudo -S chmod +x "$STACK_DIR/ipu6_health_check.sh" || log "Failed to make health check script executable"
+fi
 
 log "==> Installation completed successfully ✓"
 log "Backup created at: $BACKUP_DIR"
@@ -285,15 +440,18 @@ log "Installation log: $LOG_FILE"
 echo
 echo "==> Next steps:"
 echo "1. Reboot your system"
-echo "2. Run the health check: sudo bash $HEALTH_CHECK_SCRIPT"
+echo "2. Run the health check: sudo bash $STACK_DIR/ipu6_health_check.sh"
 echo "3. Test the camera: ipu6-test"
 echo "   or: gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink"
 
 echo
 echo "==> Testing iCamerasrc GStreamer plugin"
 if command -v gst-launch-1.0 >/dev/null 2>&1; then
-    timeout 5s gst-launch-1.0 icamerasrc num-buffers=10 ! fakesink || log "Camera test completed (or timed out - this is normal)"
+    log "Running camera test..."
+    timeout 5s gst-launch-1.0 icamerasrc num-buffers=10 ! fakesink 2>&1 | tee -a "$LOG_FILE" || log "Camera test completed (or timed out - this is normal)"
 else
     log "gst-launch-1.0 not available for testing"
 fi
-gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink
+
+log "==> Final test with display output"
+gst-launch-1.0 icamerasrc ! videoconvert ! autovideosink 2>&1 | tee -a "$LOG_FILE" || log "Display test completed"
