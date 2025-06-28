@@ -151,23 +151,59 @@ verify_firmware_files() {
     log "Found $fw_count firmware files"
 }
 
-# ENHANCED: Fix development environment setup
+# CRITICAL FIX: Comprehensive development environment setup
 setup_development_environment() {
     log "==> Setting up comprehensive development environment"
     
     # Update package cache first
     echo "$password" | sudo -S apt update || die "Failed to update package list"
     
-    # Install comprehensive development packages
-    log "Installing comprehensive build dependencies..."
+    # CRITICAL FIX: Install essential development packages in the correct order
+    log "Installing essential build dependencies..."
     echo "$password" | sudo -S apt install -y \
         build-essential \
         libc6-dev \
         linux-libc-dev \
         manpages-dev \
+        gcc-multilib \
+        g++-multilib \
+        || die "Failed to install essential build dependencies"
+    
+    # Verify critical headers are available after essential packages
+    if [[ ! -f "/usr/include/stdlib.h" ]]; then
+        log "CRITICAL: stdlib.h still not found after essential packages installation"
+        log "Attempting comprehensive repair of build environment..."
+        
+        # Reinstall critical packages
+        echo "$password" | sudo -S apt install --reinstall -y \
+            libc6-dev \
+            linux-libc-dev \
+            build-essential \
+            gcc \
+            g++ \
+            || die "Failed to repair critical build environment"
+        
+        # Check again
+        if [[ ! -f "/usr/include/stdlib.h" ]]; then
+            # Last resort: try to install from a different source
+            echo "$password" | sudo -S apt install -y \
+                libc6-dev-i386 \
+                libc6-dev-amd64 \
+                || true
+                
+            if [[ ! -f "/usr/include/stdlib.h" ]]; then
+                die "CRITICAL: Cannot find stdlib.h even after comprehensive repair. System may be corrupted."
+            fi
+        fi
+    fi
+    
+    log "Essential headers verified - stdlib.h found at: /usr/include/stdlib.h"
+    
+    # Now install additional development packages
+    log "Installing additional development dependencies..."
+    echo "$password" | sudo -S apt install -y \
         gcc-11 \
         g++-11 \
-        libc6-dev-i386 \
         linux-headers-"$(uname -r)" \
         linux-headers-generic \
         dkms \
@@ -188,21 +224,38 @@ setup_development_environment() {
         pkg-config \
         gstreamer1.0-tools \
         v4l-utils \
-        || die "Failed to install development dependencies"
+        || die "Failed to install additional development dependencies"
     
-    # Verify critical headers are available
-    if [[ ! -f "/usr/include/stdlib.h" ]]; then
-        log "WARNING: stdlib.h still not found, attempting repair..."
-        echo "$password" | sudo -S apt install --reinstall -y libc6-dev build-essential || die "Failed to repair build environment"
-    fi
+    # CRITICAL FIX: Verify all essential system headers
+    local critical_headers=(
+        "/usr/include/stdlib.h"
+        "/usr/include/stdio.h"
+        "/usr/include/string.h"
+        "/usr/include/unistd.h"
+    )
     
-    # Set up proper compiler environment
+    for header in "${critical_headers[@]}"; do
+        if [[ ! -f "$header" ]]; then
+            die "CRITICAL: Essential header missing: $header"
+        fi
+        log "Verified essential header: $header"
+    done
+    
+    # Set up a proper compiler environment with verified paths
     export CC=gcc-11
     export CXX=g++-11
     export CFLAGS="-I/usr/include"
     export CXXFLAGS="-I/usr/include"
+    export C_INCLUDE_PATH="/usr/include"
+    export CPLUS_INCLUDE_PATH="/usr/include"
     
-    log "Development environment setup completed"
+    # Verify compiler can find headers
+    log "Testing compiler setup..."
+    if ! echo '#include <stdlib.h>' | $CC -E - >/dev/null 2>&1; then
+        die "CRITICAL: Compiler cannot find stdlib.h even with explicit include path"
+    fi
+    
+    log "Development environment setup completed successfully"
 }
 
 # Enhanced IA_IMAGING libraries installation
@@ -372,7 +425,7 @@ log "==> Starting IPU6 installation (version: $IPU_VERSION)"
 # Check for existing installations
 check_existing_dkms
 
-# CRITICAL FIX: Setup development environment FIRST
+# CRITICAL FIX: Setup development environment FIRST with comprehensive header verification
 setup_development_environment
 
 log "==> Creating working directory ${STACK_DIR}"
@@ -455,13 +508,14 @@ cd "${STACK_DIR}/ipu6-camera-hal" || die "Failed to enter HAL directory"
 mkdir -p build || die "Failed to create HAL build directory"
 cd build || die "Failed to enter HAL build directory"
 
-# Set comprehensive environment variables
+# CRITICAL FIX: Set comprehensive environment variables with verified paths
 export PKG_CONFIG_PATH="/usr/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export LD_LIBRARY_PATH="/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export CMAKE_PREFIX_PATH="/usr${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
 export C_INCLUDE_PATH="/usr/include:/usr/include/ia_imaging${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}"
 export CPLUS_INCLUDE_PATH="/usr/include:/usr/include/ia_imaging${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}"
 
+# CRITICAL FIX: Enhanced CMake configuration with explicit compiler and include paths
 # Configure with CMake (enhanced flags for better header detection)
 log "Configuring HAL with CMake..."
 cmake -DCMAKE_BUILD_TYPE=Release \
@@ -476,8 +530,9 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INCLUDE_PATH="/usr/include;/usr/include/ia_imaging" \
       -DCMAKE_C_COMPILER=gcc-11 \
       -DCMAKE_CXX_COMPILER=g++-11 \
-      -DCMAKE_C_FLAGS="-I/usr/include -I/usr/include/ia_imaging" \
-      -DCMAKE_CXX_FLAGS="-I/usr/include -I/usr/include/ia_imaging" \
+      -DCMAKE_C_FLAGS="-I/usr/include -I/usr/include/ia_imaging -I/usr/include/c++/11" \
+      -DCMAKE_CXX_FLAGS="-I/usr/include -I/usr/include/ia_imaging -I/usr/include/c++/11" \
+      -DCMAKE_VERBOSE_MAKEFILE=ON \
       .. 2>&1 | tee -a "$LOG_FILE" || die "CMake configuration failed for HAL"
 
 # FIXED: Use simplified build verification
@@ -487,10 +542,23 @@ else
     die "CMake build verification failed - no Makefile generated"
 fi
 
-# Build HAL with verbose output for debugging
+# CRITICAL FIX: Test compile environment before building
+log "Testing compile environment..."
+if ! echo "#include <stdlib.h>" | gcc-11 -E - >/dev/null 2>&1; then
+    die "CRITICAL: Compiler environment test failed - cannot find stdlib.h"
+fi
+log "Compile environment test passed"
+
+# Build HAL with enhanced error handling
 # Build HAL
 log "Building HAL..."
-make -j"$(nproc)" VERBOSE=1 2>&1 | tee -a "$LOG_FILE" || die "HAL build failed"
+if ! make -j"$(nproc)" VERBOSE=1 2>&1 | tee -a "$LOG_FILE"; then
+    log "HAL build failed - checking for specific errors..."
+    
+    # Try a single-threaded build for better error visibility
+    log "Attempting single-threaded build for detailed error analysis..."
+    make VERBOSE=1 2>&1 | tee -a "$LOG_FILE" || die "HAL build failed with detailed error logging"
+fi
 log "HAL built successfully"
 
 # Install HAL
@@ -511,10 +579,12 @@ export CHROME_SLIM_CAMHAL=ON
 log "Running autogen.sh..."
 ./autogen.sh 2>&1 | tee -a "$LOG_FILE" || die "autogen.sh failed for icamerasrc"
 
-# Configure with enhanced include paths
+# CRITICAL FIX: Configure with comprehensive include paths
 # Configure
 log "Configuring icamerasrc..."
 CPPFLAGS="-I/usr/include -I/usr/include/ia_imaging" \
+CFLAGS="-I/usr/include -I/usr/include/ia_imaging" \
+CXXFLAGS="-I/usr/include -I/usr/include/ia_imaging" \
 CC=gcc-11 \
 CXX=g++-11 \
 ./configure --prefix=/usr --enable-gstdrmformat=yes 2>&1 | tee -a "$LOG_FILE" || die "Configure failed for icamerasrc"
