@@ -150,3 +150,14 @@ in under a minute.
 [2]: https://raw.githubusercontent.com/intel/ipu6-camera-bins/main/README.md "raw.githubusercontent.com"
 [3]: https://raw.githubusercontent.com/intel/ipu6-camera-hal/main/README.md "raw.githubusercontent.com"
 [4]: https://raw.githubusercontent.com/intel/icamerasrc/icamerasrc_slim_api/README.md "raw.githubusercontent.com"
+
+---
+
+## Upadte Pop!_OS 22.04 to 6.15.4 with NVIDIA 570 + Secure Boot (MOK auto-sign)
+
+```bash
+  chmod +x popos-6154-nvidia570-secureboot.sh
+  sudo ./popos-6154-nvidia570-secureboot.sh            # normal run
+  sudo ./popos-6154-nvidia570-secureboot.sh --set-default   # also set 6.15.4 as default
+        
+```
