@@ -90,9 +90,30 @@ text
 [    9.846097] intel-ipu6 0000:00:05.0: probe with driver intel-ipu6 failed with error -2
 ```
 and the web can of my system does not work, are like if the driver was not installed. EXplain if the boths things are related and use the web search to find simmilar cases. Also suggested a fix and generate a bash script that automatize the suggested solution. Also use the Knowledge base to get additional context
-the 
+the
+The firmware side of the problem are alaready fix in the versions 7, 16, and 41. And the `dmsg` command logs bellow show it evidence.
+```bash
+[    9.799655] intel-ipu6 0000:00:05.0: enabling device (0000 -> 0002)
+[    9.801324] intel_vpu 0000:00:0b.0: enabling device (0000 -> 0002)
+[    9.803549] intel_pmc_core INT33A1:00: Assuming a default substate order for this platform
+[    9.803667] intel_pmc_core INT33A1:00:  initialized
+[    9.827247] intel_vpu 0000:00:0b.0: [drm] Firmware: intel/vpu/vpu_37xx_v1.bin, version: 20250115*MTL_CLIENT_SILICON-release*1905*ci_tag_ud202504_vpu_rc_20250115_1905*ae83b65d01c
+[    9.827256] intel_vpu 0000:00:0b.0: [drm] Scheduler mode: HW
+[    9.833021] intel-ipu6 0000:00:05.0: Found supported sensor OVTI02C1:00
+[    9.833099] intel-ipu6 0000:00:05.0: Connected 1 cameras
+[    9.835981] intel-ipu6 0000:00:05.0: Sending BOOT_LOAD to CSE
+[    9.843202] RAPL PMU: API unit is 2^-32 Joules, 3 fixed counters, 655360 ms ovfl timer
+[    9.843206] RAPL PMU: hw unit of domain pp0-core 2^-14 Joules
+[    9.843207] RAPL PMU: hw unit of domain package 2^-14 Joules
+[    9.843207] RAPL PMU: hw unit of domain pp1-gpu 2^-14 Joules
+[    9.844298] spi-nor spi0.0: supply vcc not found, using dummy regulator
+[    9.845187] ACPI: battery: new hook: Samsung Galaxy Book Battery Extension
+[    9.863285] input: Samsung Galaxy Book Camera Lens Cover as /devices/platform/SAM0430:00/input/input26
+```
+
+
 Im a previous chat are be generate 51 versions of the script and the and each one falied in some steps and  I am atach the last 6 versions and logs to we keep going for that point.
-and the webcam still not work and the version 46, 47, 48, 49, 50, 51  of the script attached also fail. The systemd-container is the right way, but are happens some issues in the configurations of the container. Bellow are the logs of the current version:
+and the webcam still not work and the version 46, 47, 48, 49, 50, 51, 52  of the script attached also fail. The systemd-container is the right way, but are happens some issues in the configurations of the container. Bellow are the logs of the current version:
 
 Version 46
 ```bash
@@ -342,6 +363,74 @@ Failed to mount /etc/resolv.conf (type n/a) on /var/lib/machines/ipu6-noble/run/
 Failed to create /dev/console symlink: File exists
 Failed to set up /dev/console: File exists
 Child died too early.
+```
+ Version 52
+```bash
+➜  SamsungGalaxyNote git:(main) ✗ sudo ./ipu6_install_v52.sh    
+[sudo] password for fernandoavanzo: 
+[2025-10-02 15:06:01] Host preflight…
+[2025-10-02 15:06:07] Rootfs exists, reusing: /var/lib/machines/ipu6-noble
+[2025-10-02 15:06:07] Configuring Intel IPU6 PPA (edge/dev; keep other packages from official archive)…
+curl: (22) The requested URL returned error: 404
+gpg: no valid OpenPGP data found
+```
+
+Version 53
+```bash
+➜  SamsungGalaxyNote git:(main) ✗ sudo ./ipu6_install_v53.sh
+[2025-10-02 15:21:10] Host preflight…
+Get:1 https://repo.steampowered.com/steam stable InRelease [3,622 B]
+Hit:2 https://dl.google.com/linux/chrome/deb stable InRelease                                                                                                                                                                       
+Hit:3 https://repo.nordvpn.com//deb/nordvpn/debian stable InRelease                                                                                                                                                                                                                        
+Get:4 https://download.docker.com/linux/ubuntu jammy InRelease [48.8 kB]                                                                                                                                                                                                                   
+Hit:5 http://archive.ubuntu.com/ubuntu jammy-updates InRelease                                                                                                                                                                                        
+Hit:6 https://downloads.1password.com/linux/debian/amd64 stable InRelease                                                                                               
+Hit:7 http://apt.pop-os.org/proprietary jammy InRelease                                                                                           
+Ign:8 https://apt.fury.io/notion-repackaged  InRelease              
+Hit:9 http://apt.pop-os.org/release jammy InRelease                 
+Ign:10 https://apt.fury.io/notion-repackaged  Release               
+Hit:11 https://ppa.launchpadcontent.net/oem-solutions-group/intel-ipu6/ubuntu jammy InRelease
+Ign:12 https://apt.fury.io/notion-repackaged  Packages
+Hit:13 http://apt.pop-os.org/ubuntu jammy InRelease
+Ign:14 https://apt.fury.io/notion-repackaged  Translation-en_US     
+Hit:15 https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu jammy InRelease
+Hit:16 http://apt.pop-os.org/ubuntu jammy-security InRelease        
+Ign:17 https://apt.fury.io/notion-repackaged  Translation-en
+Get:12 https://apt.fury.io/notion-repackaged  Packages [1,572 B]
+Hit:18 http://apt.pop-os.org/ubuntu jammy-updates InRelease           
+Ign:14 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:17 https://apt.fury.io/notion-repackaged  Translation-en
+Hit:19 http://apt.pop-os.org/ubuntu jammy-backports InRelease
+Ign:14 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:17 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:14 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:17 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:14 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:17 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:14 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:17 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:14 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:17 https://apt.fury.io/notion-repackaged  Translation-en
+Fetched 54.0 kB in 4s (13.4 kB/s)
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+ca-certificates is already the newest version (20240203~22.04.1).
+curl is already the newest version (7.81.0-1ubuntu1.21).
+debootstrap is already the newest version (1.0.126+nmu1ubuntu0.8).
+gpg is already the newest version (2.2.27-3ubuntu2.4).
+systemd-container is already the newest version (249.11-0ubuntu3.16pop0~1749652895~22.04~34f0ce1).
+v4l2loopback-dkms is already the newest version (0.15.1-1pop1~1756123534~22.04~a34615c).
+gstreamer1.0-tools is already the newest version (1.24.13-0ubuntu1~22.04.sav0).
+v4l-utils is already the newest version (1.26.1-2~22.04.sav0).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+[2025-10-02 15:21:15] Rootfs exists, reusing: /var/lib/machines/ipu6-noble
+[2025-10-02 15:21:15] Configuring Intel IPU6 userspace PPA in container (Noble only)…
+[2025-10-02 15:21:16] Updating APT metadata inside container…
+Failed to create /dev/console symlink: File exists
+Failed to set up /dev/console: File exists
+Child died too early
 ```
 
 Said that, explain why the current version of the script fail and find a fix that solve the problem and keep what work in the previuos version still working. And generate a new version of the script and explain the new approach and why it should work that time. And explain why the previous version fail and why the current version should work. Use websearch and knownledge base to get additional answer and mention all references and sites used to build the answer. Also use all processing power avaiable to build the answer. Do not stop work ultil build a valid answer
