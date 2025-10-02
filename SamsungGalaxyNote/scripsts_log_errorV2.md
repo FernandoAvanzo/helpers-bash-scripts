@@ -433,6 +433,72 @@ Failed to set up /dev/console: File exists
 Child died too early
 ```
 
+logs version 54
+```bash
+➜  SamsungGalaxyNote git:(main) ✗ sudo ./ipu6_install_v54.sh
+[2025-10-02 15:43:45] Host preflight…
+Get:1 https://repo.steampowered.com/steam stable InRelease [3,622 B]
+Get:2 https://download.docker.com/linux/ubuntu jammy InRelease [48.8 kB]                                                                                                                                                                                                                                                 
+Hit:3 https://dl.google.com/linux/chrome/deb stable InRelease                                                                                                                                                                                                                                     
+Hit:4 http://apt.pop-os.org/proprietary jammy InRelease                                                                                                                                                                                                             
+Hit:5 http://archive.ubuntu.com/ubuntu jammy-updates InRelease                                                                                                                                                
+Hit:6 https://repo.nordvpn.com//deb/nordvpn/debian stable InRelease                                                                                                      
+Hit:7 http://apt.pop-os.org/release jammy InRelease                                                                                  
+Hit:8 https://downloads.1password.com/linux/debian/amd64 stable InRelease                                      
+Hit:9 http://apt.pop-os.org/ubuntu jammy InRelease                                        
+Ign:10 https://apt.fury.io/notion-repackaged  InRelease             
+Ign:11 https://apt.fury.io/notion-repackaged  Release               
+Hit:12 http://apt.pop-os.org/ubuntu jammy-security InRelease        
+Ign:13 https://apt.fury.io/notion-repackaged  Packages              
+Hit:14 https://ppa.launchpadcontent.net/oem-solutions-group/intel-ipu6/ubuntu jammy InRelease
+Hit:15 http://apt.pop-os.org/ubuntu jammy-updates InRelease         
+Ign:16 https://apt.fury.io/notion-repackaged  Translation-en_US     
+Hit:17 https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu jammy InRelease
+Hit:18 http://apt.pop-os.org/ubuntu jammy-backports InRelease       
+Ign:19 https://apt.fury.io/notion-repackaged  Translation-en
+Get:13 https://apt.fury.io/notion-repackaged  Packages [1,572 B]
+Ign:16 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:19 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:16 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:19 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:16 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:19 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:16 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:19 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:16 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:19 https://apt.fury.io/notion-repackaged  Translation-en
+Ign:16 https://apt.fury.io/notion-repackaged  Translation-en_US
+Ign:19 https://apt.fury.io/notion-repackaged  Translation-en
+Fetched 54.0 kB in 4s (12.7 kB/s)
+Reading package lists... Done
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+ca-certificates is already the newest version (20240203~22.04.1).
+curl is already the newest version (7.81.0-1ubuntu1.21).
+debootstrap is already the newest version (1.0.126+nmu1ubuntu0.8).
+gpg is already the newest version (2.2.27-3ubuntu2.4).
+systemd-container is already the newest version (249.11-0ubuntu3.16pop0~1749652895~22.04~34f0ce1).
+v4l2loopback-dkms is already the newest version (0.15.1-1pop1~1756123534~22.04~a34615c).
+gstreamer1.0-tools is already the newest version (1.24.13-0ubuntu1~22.04.sav0).
+v4l-utils is already the newest version (1.26.1-2~22.04.sav0).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+[2025-10-02 15:43:51] Rootfs exists, reusing: /var/lib/machines/ipu6-noble
+[2025-10-02 15:43:51] Configuring Intel IPU6 userspace PPA in container (Noble only)…
+[2025-10-02 15:43:52] Updating APT metadata inside container…
+Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:3 https://ppa.launchpadcontent.net/oem-solutions-group/intel-ipu6/ubuntu noble InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu noble-security InRelease
+Reading package lists... Done
+[2025-10-02 15:43:53] Installing IPU6 HAL + icamerasrc + helpers inside container…
+Reading package lists... Done
+Building dependency tree... Done
+E: Unable to locate package ipu6-camera-hal
+E: Unable to locate package ipu6-camera-bins
+
+```
+
 Said that, explain why the current version of the script fail and find a fix that solve the problem and keep what work in the previuos version still working. And generate a new version of the script and explain the new approach and why it should work that time. And explain why the previous version fail and why the current version should work. Use websearch and knownledge base to get additional answer and mention all references and sites used to build the answer. Also use all processing power avaiable to build the answer. Do not stop work ultil build a valid answer
 
 ```
