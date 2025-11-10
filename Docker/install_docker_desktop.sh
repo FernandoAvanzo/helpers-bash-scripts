@@ -18,7 +18,7 @@ source "$HELPERS"/tool_check_script.sh
 
 
 password="$(getRootPassword)"
-url="https://desktop.docker.com/linux/main/amd64/207573/docker-desktop-amd64.deb?utm_source=docker&utm_medium=webreferral&utm_campaign=docs-driven-download-linux-amd64&_gl=1*1lcizeu*_gcl_au*NDI0ODc3MjYyLjE3NTU1MTU5Njk.*_ga*MTUwMDgyNjEzNC4xNzMwMzE1MjY3*_ga_XJWPQMJYHQ*czE3NjAzNTYwNTgkbzIwJGcxJHQxNzYwMzU2MDYwJGo1OCRsMCRoMA.."
+url="https://desktop.docker.com/linux/main/amd64/209931/docker-desktop-amd64.deb?utm_source=docker&utm_medium=webreferral&utm_campaign=docs-driven-download-linux-amd64&_gl=1*1d3709c*_gcl_au*NDI0ODc3MjYyLjE3NTU1MTU5Njk.*_ga*MTUwMDgyNjEzNC4xNzMwMzE1MjY3*_ga_XJWPQMJYHQ*czE3NjI4MDIwNjkkbzIxJGcxJHQxNzYyODAyMDcyJGo1NyRsMCRoMA.."
 dest_path="$HOME/Downloads/docker-desktop-amd64.deb"
 
 install_docker_desktop() {
