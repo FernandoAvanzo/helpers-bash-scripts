@@ -6,6 +6,7 @@ rootProject.name = "MyCli"
 include("BashLib")
 include("Cloudquery")
 include("Docker")
+include("Docker:wiremockCompose")
 include("GmailFilters")
 include("Github")
 include("GPT_API_Config")

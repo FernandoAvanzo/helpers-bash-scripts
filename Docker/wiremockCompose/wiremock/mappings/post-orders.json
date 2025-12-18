@@ -1,0 +1,22 @@
+{
+  "id": "post-orders",
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/orders",
+    "headers": {
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": [
+      "response-template"
+    ],
+    "body": "{\n  \"orderId\": \"{{request.id}}\",\n  \"customerId\": \"{{jsonPath request.body '$.customerId'}}\",\n  \"receivedItems\": {{{jsonPath request.body '$.items'}}},\n  \"status\": \"CREATED\"\n}\n"
+  }
+}

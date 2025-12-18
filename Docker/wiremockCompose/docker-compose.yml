@@ -1,0 +1,24 @@
+services:
+  wiremock:
+    image: wiremock/wiremock:3.13.2
+    container_name: wiremock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./wiremock:/home/wiremock
+    command:
+      - "--port"
+      - "8080"
+      - "--verbose"
+      - "--global-response-templating"
+    # Optional: for demo you can see admin endpoints at:
+    # http://localhost:8080/__admin
+
+  # Optional demo client container (runs curl against the mock and exits)
+  demo-client:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      - wiremock
+    entrypoint: ["/bin/sh","-lc"]
+    command: |
+      echo "GET /api/users";       curl -s http://wiremock:8080/api/users | sed 's/\\n//g'; echo;       echo "GET /api/users/42";       curl -s http://wiremock:8080/api/users/42 | sed 's/\\n//g'; echo;       echo "POST /api/orders";       curl -s -X POST http://wiremock:8080/api/orders         -H "Content-Type: application/json"         -d '{"customerId":"c-123","items":[{"sku":"sku-1","qty":2}]}'         | sed 's/\\n//g'; echo

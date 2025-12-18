@@ -1,0 +1,18 @@
+{
+  "id": "fallback-404",
+  "priority": 1000,
+  "request": {
+    "method": "ANY",
+    "urlPathPattern": "/api/.*"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": [
+      "response-template"
+    ],
+    "body": "{\n  \"error\": \"No stub matched\",\n  \"path\": \"{{request.url}}\"\n}\n"
+  }
+}

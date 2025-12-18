@@ -1,0 +1,17 @@
+{
+  "id": "get-user-by-id",
+  "request": {
+    "method": "GET",
+    "urlPathTemplate": "/api/users/{userId}"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": [
+      "response-template"
+    ],
+    "body": "{\n  \"id\": \"{{request.path.userId}}\",\n  \"name\": \"User {{request.path.userId}}\",\n  \"email\": \"user{{request.path.userId}}@example.test\"\n}\n"
+  }
+}
