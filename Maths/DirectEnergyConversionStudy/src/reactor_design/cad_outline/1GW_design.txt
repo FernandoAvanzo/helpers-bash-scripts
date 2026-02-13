@@ -1,0 +1,19 @@
+
+1 GW Direct Conversion Reactor – Engineering Outline
+
+Core Geometry:
+- Cylindrical vacuum chamber: 12 m height, 8 m diameter
+- Electrostatic grids: 0.5 m spacing, 5 MV potential
+- Superconducting magnet array: 15 Tesla REBCO coils
+
+Shielding:
+- 2 m borated concrete
+- Tungsten inner liner
+
+Thermal Backup:
+- Helium Brayton cycle
+- 600°C outlet temperature
+
+Auxiliary Systems:
+- Cryogenic cooling for superconductors
+- Neutron absorption blanket
