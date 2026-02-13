@@ -41,10 +41,29 @@ Install requirements:
 pip install -r requirements.txt
 ```
 
+Optional GPU support (PyCUDA):
+
+```bash
+./scripts/setup_cuda_pycuda.sh
+pip install -r requirements.txt -r requirements-gpu.txt
+```
+
+Notes for PyCUDA builds (see `docs/gpu_setup.md`):
+
+- CUDA Toolkit installed with `nvcc` available on `PATH`.
+- CUDA headers visible (set `CUDA_INC_DIR` if needed).
+- Python development headers for your interpreter (provides `pyconfig.h`).
+
 Run example simulation:
 
 ```bash
 python src/simulations/monte_carlo_3d.py
+```
+
+If you prefer module execution:
+
+```bash
+python -m src.simulations.monte_carlo_3d
 ```
 
 ---
@@ -56,4 +75,3 @@ python src/simulations/monte_carlo_3d.py
 - Magnet quench modeling
 - Lifecycle economic simulation
 - Fusion reactor optimization
-

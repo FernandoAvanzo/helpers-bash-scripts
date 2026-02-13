@@ -1,8 +1,24 @@
+from __future__ import annotations
+
+import os
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
-from src.utils.constants import e
 
-def simulate(N=10000):
+# Allow running as a script without installing the package.
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from src.utils.constants import e
+from src.utils.gpu import warn_if_no_gpu
+
+def simulate(N=10000, use_gpu=False):
+    if use_gpu:
+        # GPU path not implemented; warn and fall back to CPU.
+        warn_if_no_gpu()
+
     q = 20*e
     m = 1.6e-25
     E_particle = 100e6*e
