@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# Playwright-template artifacts
+playwright-report/
+test-results/
+blob-report/
+*.trace.zip
+
+# Env files
+.env
