@@ -97,9 +97,9 @@ Log snippets from `dmsg` command
 ```
 
 print screen of evidences that web do not work
-![img_1.png](img_1.png)
+![img_1.png](../img_1.png)
 
-![img.png](img.png)
+![img.png](../img.png)
 
 ### Scripts version 10 Running Logs
 
