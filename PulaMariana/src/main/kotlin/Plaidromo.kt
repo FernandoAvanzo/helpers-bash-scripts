@@ -1,5 +1,3 @@
-import java.io.IO.println
-
 fun palandrino(palavra: String): Boolean{
 
     var begin = 0
