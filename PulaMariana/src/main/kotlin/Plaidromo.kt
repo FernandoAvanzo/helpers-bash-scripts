@@ -1,18 +1,18 @@
-fun palandrino(palavra: String): Boolean{
+fun palindrome(word: String): Boolean{
 
     var begin = 0
-    var end = palavra.length - 1;
+    var end = word.length - 1
 
     while (begin < end){
-        if(palavra[begin]!=palavra[end]){
-            return false;
+        if(word[begin]!=word[end]){
+            return false
         }
-        end--;
-        begin++;
+        end--
+        begin++
     }
-    return true;
+    return true
 }
 
 fun main() {
-    println(palandrino("ana"))
+    println(palindrome("ana"))
 }
