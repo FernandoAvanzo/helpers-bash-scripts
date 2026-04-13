@@ -1,0 +1,10 @@
+[Unit]
+Description=Run v4l2-relayd health watchdog every 3 minutes
+
+[Timer]
+OnActiveSec=3min
+OnUnitActiveSec=3min
+RandomizedDelaySec=10
+
+[Install]
+WantedBy=timers.target

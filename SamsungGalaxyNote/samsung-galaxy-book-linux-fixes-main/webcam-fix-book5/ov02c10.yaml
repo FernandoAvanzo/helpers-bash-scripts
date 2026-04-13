@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: CC0-1.0
+# Tuning file for OmniVision OV02C10 on Intel IPU7 (Lunar Lake)
+# Used by libcamera's Simple pipeline handler / Software ISP
+#
+# The default uncalibrated.yaml has no CCM (color correction matrix),
+# which produces a near-grayscale or green-tinted image. This file
+# adds a light CCM that restores reasonable color. It's not a full
+# sensor calibration — proper tuning files are expected upstream.
+#
+# Reference: https://bbs.archlinux.org/viewtopic.php?id=307261
+%YAML 1.1
+---
+version: 1
+algorithms:
+  - BlackLevel:
+  - Awb:
+  - Ccm:
+      ccms:
+        - ct: 5000
+          ccm: [ 1.05, -0.02, -0.01,
+                -0.03,  0.92, -0.03,
+                -0.01, -0.02,  1.05 ]
+  - Adjust:
+  - Agc:
+...

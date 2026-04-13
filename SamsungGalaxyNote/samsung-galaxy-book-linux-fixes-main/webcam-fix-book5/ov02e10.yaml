@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: CC0-1.0
+# Tuning file for OmniVision OV02E10 on Intel IPU7 (Lunar Lake)
+# Used by libcamera's Simple pipeline handler / Software ISP
+#
+# Multi-temperature CCM tuning by @david-bartlett.
+# 6-anchor tuning for libcamera 0.6.0+.
+# Anchors: 2700K, 3200K, 4500K, 5500K, 6000K, 6500K
+#
+# Row sums intentionally > 1.0 for colour richness — the OV02E10 sensor
+# underproduces relative to libcamera's expectations. Normalising to 1.0
+# produces washed-out colours.
+#
+# Green diagonal reduces with increasing CT to suppress the sensor's native
+# green bias, which worsens at higher colour temperatures. Cross-terms are
+# used to selectively suppress green on neutral surfaces while preserving
+# saturation on genuinely green objects.
+#
+# Tested on Samsung Galaxy Book 5 Pro (940XHA), Fedora 44, libcamera 0.7.0,
+# IPU7/Lunar Lake, with ipu-bridge-fix and Bayer fix applied.
+%YAML 1.1
+---
+version: 1
+algorithms:
+  - BlackLevel:
+  - Awb:
+  - Ccm:
+      ccms:
+        - ct: 2700
+          ccm: [  1.620, -0.140, -0.100,
+                 -0.083,  1.633, -0.413,
+                  0.012, -0.433,  1.625 ]
+        - ct: 3200
+          ccm: [  1.620, -0.120, -0.080,
+                 -0.150,  1.700, -0.340,
+                  0.000, -0.312,  1.500 ]
+        - ct: 4500
+          ccm: [  1.590, -0.100, -0.060,
+                 -0.140,  1.380, -0.120,
+                  0.010, -0.216,  1.460 ]
+        - ct: 5500
+          ccm: [  1.420, -0.120, -0.084,
+                 -0.050,  1.010, -0.030,
+                  0.050, -0.240,  1.460 ]
+        - ct: 6000
+          ccm: [  1.480, -0.096, -0.096,
+                 -0.020,  0.920,  0.040,
+                  0.080, -0.252,  1.460 ]
+        - ct: 6500
+          ccm: [  1.450, -0.072, -0.108,
+                  0.000,  0.850,  0.060,
+                  0.100, -0.264,  1.440 ]
+  - Adjust:
+  - Agc:
+...

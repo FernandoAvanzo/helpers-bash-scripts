@@ -1,0 +1,12 @@
+[Unit]
+Description=Check if native IPU6 webcam support has landed upstream
+After=multi-user.target
+# Only run if the relay workaround is still installed
+ConditionPathExists=/etc/v4l2-relayd.d/default.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/v4l2-relayd-check-upstream.sh
+
+[Install]
+WantedBy=multi-user.target

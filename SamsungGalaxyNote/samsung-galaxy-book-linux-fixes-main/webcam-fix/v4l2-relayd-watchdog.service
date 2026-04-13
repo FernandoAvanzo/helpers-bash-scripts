@@ -1,0 +1,7 @@
+[Unit]
+Description=v4l2-relayd health watchdog (blank frame detection)
+ConditionPathExists=/dev/video0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/v4l2-relayd-watchdog.sh
