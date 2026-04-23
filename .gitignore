@@ -167,6 +167,13 @@ dmypy.json
 /.build/*
 /gradlew.bat
 
+#Junie
+/.junie/
+/.junie/*
+/.junie/*.*
+/.junie/*/
+/.junie/*/*.*
+
 #My Company excluded scripts
 /MyCompanys/AmericanasSA
 /MyCompanys/AmericanasSA/
