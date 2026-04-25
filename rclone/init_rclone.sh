@@ -15,6 +15,7 @@ run_rclone_tasks() {
   create_systemd_symlink
   verify_avanzo_drive_symlink
   refresh_token_connection
+  wait_for_30_seconds
   manage_rclone_service
   install_refresh_token_command
 }
@@ -25,4 +26,5 @@ if ! is_rclone_mounted; then
 else
   echo "Rclone is already mounted"
 fi
+
 exit

@@ -206,7 +206,7 @@ clean_mount_folder() {
 }
 
 refresh_token_connection(){
-  if ! rclone ls remote:/; then
+  if ! rclone ls remote:/Images; then
     echo "Reconnect Rclone"
     reset_token
     rclone_reconnect
@@ -230,6 +230,21 @@ install_refresh_token_command(){
     else
       echo "Refresh token command already installed."
   fi
+}
+
+wait_for_30_seconds() {
+  echo "Waiting for 30 seconds..."
+  for i in $(seq 30 -1 1); do
+    echo -ne "Time remaining: $i\033[0K\r"
+    sleep 1
+  done
+  echo "Done waiting!"
+}
+
+
+mount_rclone(){
+  echo "$(get-root-psw)" | sudo -S  /usr/bin/rclone mount remote: /mnt/data/gdrive/avanzo-drive --file-perms 0777 --dir-perms 0777 --vfs-cache-mode full
+  echo "Rclone mounted successfully."
 }
 
 stop_rclone_service(){
