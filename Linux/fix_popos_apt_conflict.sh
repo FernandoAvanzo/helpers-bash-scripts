@@ -1,60 +1,111 @@
 #!/usr/bin/env bash
-# fix_popos_apt_conflict.sh
-# Resolve apt Signed-By conflicts on Pop!_OS 24.04
+# fix_popos_apt_conflict_v2.sh
+#
+# This script resolves apt Signed-By conflicts on Pop!_OS 24.04 by
+# normalizing all entries pointing at http://apt.pop-os.org/ubuntu to use
+# the same key file.  It also disables backup files that apt may
+# inadvertently read (e.g. *.bak, *.save) to prevent duplicate repository
+# definitions from causing conflicts.
+#
+# Usage: run as root: sudo ./fix_popos_apt_conflict_v2.sh
+
 set -euo pipefail
 
+# URL of the Pop!_OS Ubuntu mirror whose entries we are normalizing
 REPO_URL="http://apt.pop-os.org/ubuntu"
+# Canonical key file to use for all Signed-By references
 EXPECTED_KEY="/etc/apt/trusted.gpg.d/ubuntu-keyring-2018-archive.gpg"
-BACKUP_DIR="/etc/apt/sources.list.d.bak-$(date +%Y%m%d-%H%M%S)"
+# Directory containing apt source lists
+SRCDIR="/etc/apt/sources.list.d"
+# Create a timestamped backup directory
+BACKUP_DIR="${SRCDIR}.bak-$(date +%Y%m%d-%H%M%S)"
 
-# Ensure running as root
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root." >&2
-  exit 1
-fi
-
-# Backup sources.list.d
-if [[ -d /etc/apt/sources.list.d ]]; then
-  echo "Backing up /etc/apt/sources.list.d to $BACKUP_DIR"
-  cp -a /etc/apt/sources.list.d "$BACKUP_DIR"
-fi
-
-cd /etc/apt/sources.list.d || { echo "sources.list.d not found"; exit 1; }
-
-# Find files referencing the repository URL
-mapfile -t FILES < <(grep -Rl "$REPO_URL" . || true)
-if [[ ${#FILES[@]} -eq 0 ]]; then
-  echo "No sources referencing $REPO_URL were found. Exiting."
-  exit 0
-fi
-
-echo "Found ${#FILES[@]} files referencing $REPO_URL: ${FILES[*]}"
-
-# Normalize Signed-By entries
-for file in "${FILES[@]}"; do
-  # Determine current Signed-By values in file
-  current_keys=$(grep -E "^Signed-By:" "$file" | awk '{print $2}') || true
-  if [[ -z "$current_keys" ]]; then
-    echo "File $file has no Signed-By field; skipping." >&2
-    continue
+function require_root() {
+  # Ensure the script is executed with root privileges
+  if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root." >&2
+    exit 1
   fi
-  # If the file contains the expected key, leave it untouched
-  if echo "$current_keys" | grep -q "$EXPECTED_KEY"; then
-    echo "File $file already uses expected key $EXPECTED_KEY, leaving unchanged."
-    continue
+}
+
+function backup_sources() {
+  # Back up the entire sources.list.d directory
+  if [[ -d "$SRCDIR" ]]; then
+    echo "Backing up $SRCDIR to $BACKUP_DIR"
+    cp -a "$SRCDIR" "$BACKUP_DIR"
+  else
+    echo "Directory $SRCDIR does not exist; nothing to back up." >&2
+    exit 1
   fi
+}
 
-  # Attempt to replace conflicting Signed-By line
-  echo "Normalizing Signed-By in $file..."
-  # Use sed to replace the entire Signed-By line
-  sed -i.bak "s|^Signed-By:.*|Signed-By: $EXPECTED_KEY|" "$file"
-  echo "Updated $file: changed Signed-By to $EXPECTED_KEY (backup saved as $file.bak)"
+function normalize_sources() {
+  cd "$SRCDIR"
+  # Find all files referencing the repository URL
+  mapfile -t files < <(grep -Rl "$REPO_URL" . || true)
+  if [[ ${#files[@]} -eq 0 ]]; then
+    echo "No files referencing $REPO_URL were found."
+    return
+  fi
+  echo "Found ${#files[@]} files referencing $REPO_URL: ${files[*]}"
+  for file in "${files[@]}"; do
+    # Skip directories
+    if [[ -d "$file" ]]; then
+      continue
+    fi
+    # Determine file extension (portion after last dot)
+    ext="${file##*.}"
+    # Disable backup files (.bak or .save) by renaming them to .disabled
+    if [[ "$file" =~ \.bak$ || "$file" =~ \.save$ ]]; then
+      new_name="${file}.disabled"
+      echo "Disabling backup file $file -> $new_name"
+      mv "$file" "$new_name"
+      continue
+    fi
+    # Normalize .sources files
+    if [[ "$ext" == "sources" ]]; then
+      # Check if Signed-By line exists
+      if grep -q '^Signed-By:' "$file"; then
+        # Replace existing Signed-By line with expected key
+        sed -i.bak "s|^Signed-By:.*|Signed-By: $EXPECTED_KEY|" "$file"
+        echo "Updated Signed-By in $file (backup at $file.bak)"
+      else
+        # Insert Signed-By line after URIs line if missing
+        sed -i.bak "/^URIs:/a Signed-By: $EXPECTED_KEY" "$file"
+        echo "Added Signed-By line to $file (backup at $file.bak)"
+      fi
+      continue
+    fi
+    # Normalize .list files
+    if [[ "$ext" == "list" ]]; then
+      # Only operate on lines referencing the repository URL
+      # Check if [signed-by=] already exists on the line
+      if grep -qE "^deb\s+\[.*signed-by=[^]]*\]" "$file"; then
+        # Replace existing signed-by value within square brackets
+        sed -i.bak "s|\[\([^]]*\)signed-by=[^ ]*|[\1signed-by=$EXPECTED_KEY|" "$file"
+        echo "Replaced inline signed-by directive in $file (backup at $file.bak)"
+      else
+        # Prepend inline signed-by directive after 'deb' on lines with the repo URL
+        # This preserves other options (e.g., arch=amd64) within the square bracket if present.
+        sed -i.bak "/^deb\s\+\(\[[^]]*\]\s\+\)\?${REPO_URL//\//\/}/ s|^deb\s\+|deb [signed-by=$EXPECTED_KEY] |" "$file"
+        echo "Inserted inline signed-by directive in $file (backup at $file.bak)"
+      fi
+      continue
+    fi
+    echo "Skipping unrecognized file type $file"
+  done
+}
 
-done
+function run_apt_update() {
+  echo "Running apt update to verify that the conflict has been resolved..."
+  if apt-get update; then
+    echo "apt update completed successfully. Signed-By conflicts should now be resolved."
+  else
+    echo "apt update still reports errors. Please review the modified sources files manually." >&2
+  fi
+}
 
-# Run apt update and report success or failure
-if apt-get update; then
-  echo "apt update completed successfully. The Signed-By conflict should be resolved."
-else
-  echo "apt update encountered errors. Please review the sources files manually." >&2
-fi
+require_root
+backup_sources
+normalize_sources
+run_apt_update
