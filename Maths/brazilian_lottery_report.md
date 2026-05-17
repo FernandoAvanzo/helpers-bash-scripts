@@ -355,3 +355,10 @@ The biggest unresolved point from the official sources I reviewed is this: CAIXA
 The selected GitHub repository and Google Drive connectors were useful as context, especially because your Drive contains Mega-Sena analysis spreadsheets, but they are not authoritative enough to replace the official CAIXA rules and result pages for this report.
 
 The most important product limitation remains mathematical, not infrastructural: if the official draw process is fair, the bot cannot legitimately improve the true exact-match probability over any other specific ticket. What it can do credibly is formalize probabilities, monitor randomness, automate historical ingestion, and generate diversified low-sharing portfolios under transparent assumptions. citeturn5view0turn4view0
+
+## References
+ - [realistic utility function](https://www.notion.so/fernando-avanzo/realistic-utility-function-362b3def3e7c81e08c8de6fb540f1765?source=copy_link)
+ - [Official-style probabilistic model for a single Mega-Sena contest](https://www.notion.so/fernando-avanzo/Official-style-probabilistic-model-for-a-single-Mega-Sena-contest-362b3def3e7c81bc9b4ee8626b46acb8?source=copy_link)
+ - [Correct combinatorial formulas are straightforward](https://www.notion.so/fernando-avanzo/Correct-combinatorial-formulas-are-straightforward-362b3def3e7c81c9a212cef6e0a807c3?source=copy_link)
+ - [fair-null model](https://www.notion.so/fernando-avanzo/fair-null-model-363b3def3e7c81df9fdff3d8de4ee4bc?source=copy_link)
+ - [One clean formulation is a weighted-without-replacement model](https://www.notion.so/fernando-avanzo/One-clean-formulation-is-a-weighted-without-replacement-model-363b3def3e7c813a8885dd7021069b7a?source=copy_link)
