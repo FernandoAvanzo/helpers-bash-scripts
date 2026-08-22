@@ -26,6 +26,9 @@ SYSTEM_ONLY=0
 DRY_RUN=0
 AUTO_MASK=1
 
+# /**
+#  * Prints the command-line options and explains what this repair script changes.
+#  */
 usage() {
   cat <<EOF
 Usage:
@@ -66,6 +69,9 @@ After Flathub is fixed:
 EOF
 }
 
+# /**
+#  * Writes a timestamped message to the run log and also shows it on the screen.
+#  */
 log() {
   local line
   line="$(printf '[%s] %s\n' "$(date '+%F %T')" "$*")"
@@ -76,11 +82,18 @@ log() {
   fi
 }
 
+# /**
+#  * Records a fatal error and stops the script immediately.
+#  */
 die() {
   log "ERROR: $*"
   exit 1
 }
 
+# /**
+#  * Reports the approximate location of an unexpected command failure and points
+#  * the user to the log and rollback command.
+#  */
 on_error() {
   local line="$1"
   log "ERROR: command failed near line $line."
@@ -89,6 +102,10 @@ on_error() {
 }
 trap 'on_error "$LINENO"' ERR
 
+# /**
+#  * Formats command arguments safely so a command can be printed in a readable,
+#  * copyable form without actually executing it.
+#  */
 quote_cmd() {
   local out="" arg
   for arg in "$@"; do
@@ -98,6 +115,9 @@ quote_cmd() {
   printf '%s' "${out% }"
 }
 
+# /**
+#  * Logs a command and runs it, or only logs it when dry-run mode is enabled.
+#  */
 run() {
   log "+ $(quote_cmd "$@")"
   if (( DRY_RUN )); then
@@ -106,6 +126,10 @@ run() {
   "$@"
 }
 
+# /**
+#  * Runs a command while saving its output to a file, returning the command's
+#  * original exit status so callers can decide how to handle failure.
+#  */
 run_capture() {
   local outfile="$1"
   shift
@@ -125,15 +149,25 @@ run_capture() {
   return "$status"
 }
 
+# /**
+#  * Checks whether a named resumable step was already completed in this run.
+#  */
 step_done() {
   [[ -f "$STEP_DIR/$1.done" ]]
 }
 
+# /**
+#  * Creates the marker file that records a completed resumable step.
+#  */
 mark_step_done() {
   mkdir -p "$STEP_DIR"
   : > "$STEP_DIR/$1.done"
 }
 
+# /**
+#  * Executes a named step once and records it, allowing a rerun to skip work
+#  * that has already succeeded.
+#  */
 step() {
   local id="$1"
   shift
@@ -147,10 +181,17 @@ step() {
   mark_step_done "$id"
 }
 
+# /**
+#  * Verifies that an external command required by the script is available.
+#  */
 need_command() {
   command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
 }
 
+# /**
+#  * Asks for permission before changing Flatpak state unless confirmation was
+#  * disabled or the script is only displaying a dry-run.
+#  */
 confirm() {
   if (( YES || DRY_RUN )); then
     return 0
@@ -164,6 +205,10 @@ confirm() {
   esac
 }
 
+# /**
+#  * Creates the run directories and log, checks required tools, and prepares
+#  * sudo credentials when system-wide Flatpak work is enabled.
+#  */
 prepare() {
   mkdir -p "$RUN_DIR" "$STEP_DIR"
   : > "$LOG_FILE"
@@ -186,30 +231,53 @@ prepare() {
   log "Log file: $LOG_FILE"
 }
 
+# /**
+#  * Checks whether the Flathub remote exists in the current user's Flatpak
+#  * installation.
+#  */
 remote_exists_user() {
   flatpak --user remotes 2>/dev/null | awk '{print $1}' | grep -Fxq "$REMOTE"
 }
 
+# /**
+#  * Checks whether the Flathub remote exists in the system Flatpak installation.
+#  */
 remote_exists_system() {
   flatpak --system remotes 2>/dev/null | awk '{print $1}' | grep -Fxq "$REMOTE"
 }
 
+# /**
+#  * Checks whether the target Rust stable extension is installed for the user.
+#  */
 ref_installed_user() {
   flatpak --user info "$REF" >/dev/null 2>&1
 }
 
+# /**
+#  * Checks whether the target Rust stable extension is installed system-wide.
+#  */
 ref_installed_system() {
   sudo flatpak --system info "$REF" >/dev/null 2>&1
 }
 
+# /**
+#  * Checks whether the target Rust extension is already masked for the user.
+#  */
 mask_exists_user() {
   flatpak --user mask 2>/dev/null | grep -Fxq "$REF"
 }
 
+# /**
+#  * Checks whether the target Rust extension is already masked system-wide.
+#  */
 mask_exists_system() {
   sudo flatpak --system mask 2>/dev/null | grep -Fxq "$REF"
 }
 
+# /**
+#  * Records a mask created by this run so rollback can remove exactly those
+#  * masks later.
+#  */
 record_added_mask() {
   local scope="$1"
   local pattern="$2"
@@ -217,6 +285,10 @@ record_added_mask() {
   ln -sfn "$ADDED_MASKS_FILE" "$ADDED_MASKS_LINK"
 }
 
+# /**
+#  * Saves Flatpak remotes, installed-package lists, masks, history, and repo
+#  * configuration before any repair changes are made.
+#  */
 backup_state() {
   local backup_dir="$STATE_BASE/backup-$RUN_ID"
   mkdir -p "$backup_dir"
@@ -247,6 +319,10 @@ backup_state() {
   log "Backup complete."
 }
 
+# /**
+#  * Restores repository configuration from the latest backup and removes masks
+#  * that the previous run explicitly added.
+#  */
 rollback() {
   [[ -L "$BACKUP_LINK" || -d "$BACKUP_LINK" ]] || die "No backup found at $BACKUP_LINK"
 
@@ -289,6 +365,10 @@ rollback() {
   log "Rollback completed."
 }
 
+# /**
+#  * Ensures the user's Flathub remote uses the expected URL, is enabled, and
+#  * refreshes its metadata settings.
+#  */
 ensure_user_remote() {
   if remote_exists_user; then
     step user_remote_modify flatpak --user remote-modify "$REMOTE" \
@@ -301,6 +381,10 @@ ensure_user_remote() {
   fi
 }
 
+# /**
+#  * Ensures the system Flathub remote uses the expected URL, is enabled, and
+#  * refreshes its metadata settings.
+#  */
 ensure_system_remote() {
   if remote_exists_system; then
     step system_remote_modify sudo flatpak --system remote-modify "$REMOTE" \
@@ -313,18 +397,30 @@ ensure_system_remote() {
   fi
 }
 
+# /**
+#  * Refreshes user appstream data and performs a dry-run followed by a real
+#  * repair of the user's Flatpak installation.
+#  */
 repair_user() {
   step user_appstream flatpak --user update --appstream "$REMOTE"
   step user_repair_dry flatpak --user repair --dry-run
   step user_repair flatpak --user repair
 }
 
+# /**
+#  * Refreshes system appstream data and performs a dry-run followed by a real
+#  * repair of the system Flatpak installation.
+#  */
 repair_system() {
   step system_appstream sudo flatpak --system update --appstream "$REMOTE"
   step system_repair_dry sudo flatpak --system repair --dry-run
   step system_repair sudo flatpak --system repair
 }
 
+# /**
+#  * Temporarily masks the target Rust extension for the user, unless it is
+#  * already masked, and records the new mask for rollback.
+#  */
 mask_user_ref() {
   if mask_exists_user; then
     log "User scope: $REF is already masked."
@@ -336,6 +432,10 @@ mask_user_ref() {
   log "User scope: temporarily masked $REF."
 }
 
+# /**
+#  * Temporarily masks the target Rust extension system-wide, unless it is
+#  * already masked, and records the new mask for rollback.
+#  */
 mask_system_ref() {
   if mask_exists_system; then
     log "System scope: $REF is already masked."
@@ -347,6 +447,9 @@ mask_system_ref() {
   log "System scope: temporarily masked $REF."
 }
 
+# /**
+#  * Removes the target Rust extension's user-level mask when one exists.
+#  */
 unmask_user_ref() {
   if mask_exists_user; then
     run flatpak --user mask --remove "$REF"
@@ -356,6 +459,9 @@ unmask_user_ref() {
   fi
 }
 
+# /**
+#  * Removes the target Rust extension's system-level mask when one exists.
+#  */
 unmask_system_ref() {
   if mask_exists_system; then
     run sudo flatpak --system mask --remove "$REF"
@@ -365,6 +471,10 @@ unmask_system_ref() {
   fi
 }
 
+# /**
+#  * Distinguishes Flathub's known HTTP 404 problem from other update failures;
+#  * it masks the exact broken ref when allowed, or stops with an error.
+#  */
 handle_update_failure() {
   local scope="$1"
   local outfile="$2"
@@ -388,6 +498,10 @@ handle_update_failure() {
   die "$scope scope: update failed for a reason other than HTTP 404. See $outfile"
 }
 
+# /**
+#  * Tries to update the user's installed Rust extension and masks it only when
+#  * the update fails because Flathub reports HTTP 404.
+#  */
 update_user_ref_or_mask() {
   if ! ref_installed_user; then
     log "User scope: $REF is not installed; skipping user ref update."
@@ -412,6 +526,10 @@ update_user_ref_or_mask() {
   mark_step_done user_ref_checked
 }
 
+# /**
+#  * Tries to update the system-installed Rust extension and masks it only when
+#  * the update fails because Flathub reports HTTP 404.
+#  */
 update_system_ref_or_mask() {
   if ! ref_installed_system; then
     log "System scope: $REF is not installed; skipping system ref update."
@@ -436,6 +554,9 @@ update_system_ref_or_mask() {
   mark_step_done system_ref_checked
 }
 
+# /**
+#  * Updates all user Flatpaks after repair and optionally removes unused refs.
+#  */
 final_update_user() {
   step user_update_all flatpak --user update -y --noninteractive
   if (( INCLUDE_UNUSED )); then
@@ -443,6 +564,9 @@ final_update_user() {
   fi
 }
 
+# /**
+#  * Updates all system Flatpaks after repair and optionally removes unused refs.
+#  */
 final_update_system() {
   step system_update_all sudo flatpak --system update -y --noninteractive
   if (( INCLUDE_UNUSED )); then
@@ -450,6 +574,10 @@ final_update_system() {
   fi
 }
 
+# /**
+#  * Displays the final remote, mask, and runtime state and tells the user where
+#  * the log is and whether a temporary mask needs to be removed later.
+#  */
 verify() {
   log "Verification:"
   flatpak remotes --show-details | tee -a "$LOG_FILE" || true
