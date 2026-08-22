@@ -192,6 +192,7 @@ need_command() {
 #  * Asks for permission before changing Flatpak state unless confirmation was
 #  * disabled or the script is only displaying a dry-run.
 #  */
+# bashsupport disable=BP2001
 confirm() {
   if (( YES || DRY_RUN )); then
     return 0
@@ -289,6 +290,7 @@ record_added_mask() {
 #  * Saves Flatpak remotes, installed-package lists, masks, history, and repo
 #  * configuration before any repair changes are made.
 #  */
+# shellcheck disable=SC2024
 backup_state() {
   local backup_dir="$STATE_BASE/backup-$RUN_ID"
   mkdir -p "$backup_dir"
@@ -323,6 +325,7 @@ backup_state() {
 #  * Restores repository configuration from the latest backup and removes masks
 #  * that the previous run explicitly added.
 #  */
+# bashsupport disable=BP2001
 rollback() {
   [[ -L "$BACKUP_LINK" || -d "$BACKUP_LINK" ]] || die "No backup found at $BACKUP_LINK"
 
