@@ -1,0 +1,44 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BoundaryAllowsOnlyWhatIdentityPoliciesGrant",
+      "Effect": "Allow",
+      "Action": "*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyIdentityOrganizationAndAccountAdministration",
+      "Effect": "Deny",
+      "Action": [
+        "iam:*",
+        "organizations:*",
+        "account:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyDisablingCoreSecurityControls",
+      "Effect": "Deny",
+      "Action": [
+        "cloudtrail:StopLogging",
+        "cloudtrail:DeleteTrail",
+        "config:StopConfigurationRecorder",
+        "config:DeleteConfigurationRecorder",
+        "guardduty:DeleteDetector",
+        "securityhub:DisableSecurityHub",
+        "access-analyzer:DeleteAnalyzer"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyDestructiveKeyAdministration",
+      "Effect": "Deny",
+      "Action": [
+        "kms:ScheduleKeyDeletion",
+        "kms:DisableKey"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: GitHub Actions OIDC deployment role using a separate CloudFormation execution role.
+
+Parameters:
+  GitHubOrg:
+    Type: String
+  GitHubRepo:
+    Type: String
+  GitHubRef:
+    Type: String
+    Default: refs/heads/main
+  ExistingOidcProviderArn:
+    Type: String
+    Default: ''
+    Description: Existing token.actions.githubusercontent.com provider ARN; leave empty to create it.
+  CloudFormationExecutionRoleArn:
+    Type: String
+    Description: Security-approved role that CloudFormation assumes to deploy the target stacks.
+  StackNamePrefix:
+    Type: String
+    Default: iam-
+
+Conditions:
+  CreateOidcProvider: !Equals [!Ref ExistingOidcProviderArn, '']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Purpose
+          Value: GitHubActionsFederation
+
+  GitHubDeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'org-github-deploy-${GitHubRepo}'
+      Path: /org/automation/
+      MaxSessionDuration: 3600
+      Description: Creates and executes approved CloudFormation change sets; cannot directly mutate IAM.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: GitHubActionsOidc
+            Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateOidcProvider
+                - !Ref GitHubOidcProvider
+                - !Ref ExistingOidcProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOrg}/${GitHubRepo}:ref:${GitHubRef}'
+      Policies:
+        - PolicyName: CloudFormationChangeSetDeployment
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ValidateTemplates
+                Effect: Allow
+                Action:
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:GetTemplateSummary
+                Resource: '*'
+              - Sid: ManageApprovedStacks
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:GetTemplate
+                  - cloudformation:ListStackResources
+                Resource: !Sub 'arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:stack/${StackNamePrefix}*/*'
+              - Sid: PassOnlyApprovedCloudFormationExecutionRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !Ref CloudFormationExecutionRoleArn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: cloudformation.amazonaws.com
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Purpose
+          Value: CICDDeployment
+
+Outputs:
+  GitHubDeploymentRoleArn:
+    Value: !GetAtt GitHubDeploymentRole.Arn
+  OidcProviderArn:
+    Value: !If
+      - CreateOidcProvider
+      - !Ref GitHubOidcProvider
+      - !Ref ExistingOidcProviderArn

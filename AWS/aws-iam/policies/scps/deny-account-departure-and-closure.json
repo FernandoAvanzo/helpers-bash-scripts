@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PreventMemberAccountDepartureAndClosure",
+      "Effect": "Deny",
+      "Action": [
+        "organizations:LeaveOrganization",
+        "account:CloseAccount"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

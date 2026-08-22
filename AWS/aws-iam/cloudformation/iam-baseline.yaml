@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Secure IAM account baseline: Access Analyzer and workload permissions boundary.'
+
+Parameters:
+  OrganizationName:
+    Type: String
+    Default: example
+    AllowedPattern: '^[a-z0-9-]+$'
+  Environment:
+    Type: String
+    Default: shared
+    AllowedValues:
+      - shared
+      - dev
+      - test
+      - staging
+      - prod
+
+Resources:
+  ExternalAccessAnalyzer:
+    Type: AWS::AccessAnalyzer::Analyzer
+    Properties:
+      AnalyzerName: !Sub '${OrganizationName}-${Environment}-external-access'
+      Type: ACCOUNT
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: SecurityControl
+          Value: IAMAccessAnalyzer
+
+  WorkloadPermissionsBoundary:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${OrganizationName}-workload-boundary'
+      Path: /org/security/
+      Description: Maximum-permission guardrail for application and delegated workload roles.
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: BoundaryAllowsOnlyWhatIdentityPoliciesGrant
+            Effect: Allow
+            Action: '*'
+            Resource: '*'
+          - Sid: DenyIdentityOrganizationAndAccountAdministration
+            Effect: Deny
+            Action:
+              - iam:*
+              - organizations:*
+              - account:*
+            Resource: '*'
+          - Sid: DenyDisablingCoreSecurityControls
+            Effect: Deny
+            Action:
+              - cloudtrail:StopLogging
+              - cloudtrail:DeleteTrail
+              - config:StopConfigurationRecorder
+              - config:DeleteConfigurationRecorder
+              - guardduty:DeleteDetector
+              - securityhub:DisableSecurityHub
+              - access-analyzer:DeleteAnalyzer
+            Resource: '*'
+          - Sid: DenyDestructiveKeyAdministration
+            Effect: Deny
+            Action:
+              - kms:ScheduleKeyDeletion
+              - kms:DisableKey
+            Resource: '*'
+
+Outputs:
+  ExternalAccessAnalyzerArn:
+    Value: !Ref ExternalAccessAnalyzer
+  WorkloadPermissionsBoundaryArn:
+    Value: !Ref WorkloadPermissionsBoundary
+    Export:
+      Name: !Sub '${AWS::StackName}-WorkloadPermissionsBoundaryArn'

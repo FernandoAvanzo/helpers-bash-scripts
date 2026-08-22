@@ -9,6 +9,7 @@ plugins {
 rootProject.name = "MyCli"
 
 include("AWS")
+include("AWS:aws-iam")
 include("BashLib")
 include("Cloudquery")
 include("Docker")

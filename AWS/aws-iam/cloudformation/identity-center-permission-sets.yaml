@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Standard IAM Identity Center permission sets. Assignments are organization-specific overlays.
+
+Parameters:
+  InstanceArn:
+    Type: String
+    Description: ARN of the IAM Identity Center organization instance.
+
+Resources:
+  AdministratorPermissionSet:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      InstanceArn: !Ref InstanceArn
+      Name: Administrator
+      Description: Rare, approved account administration.
+      SessionDuration: PT1H
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: AccessTier
+          Value: Privileged
+
+  SecurityAuditPermissionSet:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      InstanceArn: !Ref InstanceArn
+      Name: SecurityAudit
+      Description: Security review, evidence collection, and investigation.
+      SessionDuration: PT4H
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/SecurityAudit
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: AccessTier
+          Value: Audit
+
+  OperationsPermissionSet:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      InstanceArn: !Ref InstanceArn
+      Name: Operations
+      Description: Routine operations without identity or organization administration.
+      SessionDuration: PT4H
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/PowerUserAccess
+      InlinePolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyIdentityAndOrganizationAdministration
+            Effect: Deny
+            Action:
+              - iam:*
+              - organizations:*
+              - account:*
+            Resource: '*'
+          - Sid: DenySecurityControlDisablement
+            Effect: Deny
+            Action:
+              - cloudtrail:StopLogging
+              - cloudtrail:DeleteTrail
+              - config:StopConfigurationRecorder
+              - config:DeleteConfigurationRecorder
+              - guardduty:DeleteDetector
+              - securityhub:DisableSecurityHub
+              - access-analyzer:DeleteAnalyzer
+            Resource: '*'
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: AccessTier
+          Value: Operations
+
+  ReadOnlyPermissionSet:
+    Type: AWS::SSO::PermissionSet
+    Properties:
+      InstanceArn: !Ref InstanceArn
+      Name: ReadOnly
+      Description: General support and visibility without mutation.
+      SessionDuration: PT8H
+      ManagedPolicies:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: AccessTier
+          Value: ReadOnly
+
+Outputs:
+  AdministratorPermissionSetArn:
+    Value: !GetAtt AdministratorPermissionSet.PermissionSetArn
+  SecurityAuditPermissionSetArn:
+    Value: !GetAtt SecurityAuditPermissionSet.PermissionSetArn
+  OperationsPermissionSetArn:
+    Value: !GetAtt OperationsPermissionSet.PermissionSetArn
+  ReadOnlyPermissionSetArn:
+    Value: !GetAtt ReadOnlyPermissionSet.PermissionSetArn

@@ -1,0 +1,43 @@
+name: Deploy IAM baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      stack_name:
+        description: CloudFormation stack name
+        required: true
+        default: iam-baseline-core
+      template:
+        description: Template path
+        required: true
+        default: cloudformation/iam-baseline.yaml
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure temporary AWS credentials through OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: github-${{ github.run_id }}
+
+      - name: Validate template
+        run: aws cloudformation validate-template --template-body file://${{ inputs.template }}
+
+      - name: Deploy through approved CloudFormation execution role
+        run: |
+          aws cloudformation deploy \
+            --stack-name "${{ inputs.stack_name }}" \
+            --template-file "${{ inputs.template }}" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --role-arn "${{ vars.CLOUDFORMATION_EXECUTION_ROLE_ARN }}" \
+            --no-fail-on-empty-changeset

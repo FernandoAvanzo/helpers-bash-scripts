@@ -1,0 +1,5 @@
+# Replace example teams with your actual GitHub teams.
+/policies/ @example/security-team
+/cloudformation/ @example/platform-team @example/security-team
+/.github/workflows/ @example/platform-team @example/security-team
+/docs/ROOT_BREAK_GLASS_RUNBOOK.md @example/security-team
