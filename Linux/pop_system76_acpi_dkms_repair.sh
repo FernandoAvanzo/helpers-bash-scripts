@@ -321,12 +321,21 @@ critical_removal_guard() {
   # apt-get -s uses "Remv" for some versions and "Purg" when purge is
   # requested.  Check both; otherwise a dangerous dependency cascade can
   # pass this guard unnoticed.
-  if grep -Eq '^(Remv|Purg) (pop-desktop|linux-system76|linux-generic|linux-headers-generic|linux-image-generic|system76-driver-nvidia|system76-driver|nvidia-driver|nvidia-dkms)' "$sim"; then
+  # system76-driver and system76-driver-nvidia depend on system76-acpi-dkms;
+  # their removal is the expected metapackage consequence of purge mode. Do
+  # not classify those two packages as critical: with autoremove disabled,
+  # their payload packages remain installed. Protect the kernel, desktop, and
+  # NVIDIA driver packages themselves.
+  if grep -Eq '^(Remv|Purg) (pop-desktop|linux-system76|linux-generic|linux-headers-generic|linux-image-generic|nvidia-driver|nvidia-dkms)' "$sim"; then
     if ((ALLOW_CRITICAL_REMOVAL)); then
       log "WARNING: critical package removal detected, but --allow-critical-removal was provided."
     else
       die "apt would remove critical Pop!/kernel/NVIDIA packages. Not purging. Try --mode force-dkms or inspect $sim."
     fi
+  fi
+
+  if grep -Eq '^(Remv|Purg) system76-driver(-nvidia)?([: ]|$)' "$sim"; then
+    log "APT will remove dependent System76 driver metapackages; this is expected in purge-dkms mode."
   fi
 }
 

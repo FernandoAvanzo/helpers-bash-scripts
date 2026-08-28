@@ -52,7 +52,7 @@ run_optional now temporarily disables and restores the ERR trap. The command is 
     chmod +x ./pop_system76_acpi_dkms_repair.sh
     sudo ./pop_system76_acpi_dkms_repair.sh --mode purge-dkms --no-flatpak
 
-Review the savepoint. If simulation reports removal of linux-*, pop-desktop, NVIDIA, or System76 driver packages, do not use --allow-critical-removal without reviewing the cause.
+Review the savepoint. If simulation reports removal of linux-*, pop-desktop, `nvidia-driver`, or `nvidia-dkms`, do not use `--allow-critical-removal` without reviewing the cause. Removal of `system76-driver` and `system76-driver-nvidia` is expected in purge mode.
 
 ### 2. Apply focused repair
 
@@ -85,7 +85,18 @@ The prior run already removed NVIDIA and related orphan packages. The corrected 
 
 Restore only packages required by the machine using the appropriate Pop!_OS/NVIDIA package set.
 
+## Follow-up finding from the 10:15 run
+
+The safety guard initially stopped the repair because the purge simulation listed `system76-driver` and `system76-driver-nvidia`. These are dependent System76 metapackages, not the kernel or NVIDIA payload packages. Their removal is the expected consequence of removing their required `system76-acpi-dkms` package.
+
+The guard was refined so these two metapackages are allowed in `purge-dkms` mode and are logged explicitly. It continues to block removal of `linux-*`, `pop-desktop`, `nvidia-driver`, and `nvidia-dkms`. Since `autoremove` remains disabled by default, the NVIDIA payload packages shown as auto-installed are not removed by this repair.
+
+The correct next command is:
+
+    sudo ./pop_system76_acpi_dkms_repair.sh --apply --mode purge-dkms --no-flatpak
+
+This should purge `system76-acpi-dkms`, remove only the dependent System76 driver metapackages, retain the in-tree `system76_acpi` module, and complete `dpkg`/APT repair. Do not add `--autoremove` during this incident.
+
 ## Validation
 
 The modified script passes bash -n and help output includes --autoremove. A privileged full dry run could not be executed in this non-interactive workspace because sudo requires the operator's password and a terminal. Run the dry-run command above on the affected machine before applying.
-
