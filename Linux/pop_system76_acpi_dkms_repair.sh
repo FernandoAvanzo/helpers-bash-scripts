@@ -3,22 +3,26 @@
 #
 # Purpose:
 #   Repair Pop!_OS package-manager failures caused by DKMS refusing to install
-#   system76_acpi for a new kernel because an in-tree system76_acpi module already exists.
+#   system76_acpi when the target kernel already contains an in-tree
+#   system76_acpi.ko(.zst) module.
 #
-# Default mode is DRY RUN. Use --apply to modify the system.
+# What v2 fixes:
+#   - Skips DKMS' internal "original_module" directory; it is not a DKMS version.
+#   - Makes non-fatal DKMS cleanup truly non-fatal under set -Eeuo pipefail.
+#   - Handles a half-completed v1 run where the DKMS module was removed but the
+#     Debian package was not purged yet.
 #
-# Recommended first run:
-#   bash pop_system76_acpi_dkms_repair.sh
+# Default mode is dry-run. Use --apply to modify the system.
 #
-# Apply the recommended fix for non-System76 hardware / kernels that already ship system76_acpi:
-#   bash pop_system76_acpi_dkms_repair.sh --apply --mode purge-dkms
+# Recommended:
+#   bash pop_system76_acpi_dkms_repair_v2.sh
+#   bash pop_system76_acpi_dkms_repair_v2.sh --apply --mode purge-dkms
 #
-# Fallback, only if you intentionally want DKMS to override the kernel module:
-#   bash pop_system76_acpi_dkms_repair.sh --apply --mode force-dkms
+# Fallback:
+#   bash pop_system76_acpi_dkms_repair_v2.sh --apply --mode force-dkms
 #
-# Rollback/savepoint:
-#   Each --apply run creates /var/backups/pop-dkms-repair/<timestamp>/
-#   with logs, package state, dkms state, selected config backups, and a rollback.sh helper.
+# Savepoints:
+#   /var/backups/pop-dkms-repair-v2/<timestamp>/
 
 set -Eeuo pipefail
 IFS=$'\n\t'
@@ -27,11 +31,14 @@ PROGRAM_NAME="$(basename "$0")"
 APPLY=0
 MODE="purge-dkms"
 ENABLE_FLATPAK=1
+ENABLE_AUTOREMOVE=0
 ALLOW_CRITICAL_REMOVAL=0
-SAVE_ROOT="/var/backups/pop-dkms-repair"
+QUARANTINE_STALE_DKMS=1
+SAVE_ROOT="/var/backups/pop-dkms-repair-v2"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 SAVEPOINT="${SAVE_ROOT}/${TIMESTAMP}"
 LOG="${SAVEPOINT}/repair.log"
+CMD_COUNTER=0
 
 usage() {
   cat <<'USAGE'
@@ -39,23 +46,41 @@ Usage:
   pop_system76_acpi_dkms_repair.sh [options]
 
 Options:
-  --apply                      Actually change the system. Without this, the script is a dry run.
-  --mode purge-dkms            Recommended: remove system76-acpi-dkms if safe, then repair dpkg/apt.
-  --mode force-dkms            Fallback: force DKMS to install system76_acpi over the in-tree module.
-  --no-flatpak                 Skip Flatpak update/repair.
-  --allow-critical-removal     Do not abort if apt simulation shows critical packages would be removed.
+  --apply                      Actually change the system. Without this, dry-run only.
+  --mode purge-dkms            Recommended: purge system76-acpi-dkms, then repair dpkg/apt.
+  --mode force-dkms            Fallback: force DKMS install over the in-tree module.
+  --no-flatpak                 Skip Flatpak repair/update.
+  --autoremove                 Remove packages APT marks as no longer required (opt-in).
+  --no-quarantine              Do not move stale /var/lib/dkms/system76_acpi after purge.
+  --allow-critical-removal     Continue even if apt simulation says critical packages are removed.
   -h, --help                   Show this help.
 
 Examples:
   bash pop_system76_acpi_dkms_repair.sh
   bash pop_system76_acpi_dkms_repair.sh --apply --mode purge-dkms
+  bash pop_system76_acpi_dkms_repair.sh --apply --mode purge-dkms --no-flatpak
   bash pop_system76_acpi_dkms_repair.sh --apply --mode force-dkms
 USAGE
 }
 
+ensure_log_target() {
+  mkdir -p "$SAVEPOINT"
+  chmod 700 "$SAVEPOINT"
+  if [[ ! -e "$LOG" ]]; then
+    : > "$LOG"
+    chmod 600 "$LOG"
+  fi
+}
+
 log() {
   local msg="$*"
-  printf '[%s] %s\n' "$(date '+%F %T')" "$msg" | tee -a "$LOG" >&2
+  local line
+  line="$(printf '[%s] %s\n' "$(date '+%F %T')" "$msg")"
+  if [[ -d "$SAVEPOINT" ]]; then
+    printf '%s\n' "$line" | tee -a "$LOG" >&2
+  else
+    printf '%s\n' "$line" >&2
+  fi
 }
 
 die() {
@@ -66,28 +91,33 @@ die() {
 
 on_error() {
   local rc=$?
-  log "ERROR: command failed with exit code ${rc}: ${BASH_COMMAND}"
+  log "ERROR: unexpected failure, exit code ${rc}: ${BASH_COMMAND}"
   log "Review ${LOG}. If this was an --apply run, see ${SAVEPOINT}/rollback.sh."
   exit "$rc"
 }
 trap on_error ERR
 
+cmd_string() {
+  printf '%q ' "$@"
+}
+
 parse_args() {
   while (($#)); do
     case "$1" in
-      --apply) APPLY=1 ;;
-      --mode)
-        shift || die "--mode requires an argument"
-        MODE="${1:-}"
-        case "$MODE" in
-          purge-dkms|force-dkms) ;;
-          *) die "Unsupported mode: $MODE" ;;
-        esac
-        ;;
-      --no-flatpak) ENABLE_FLATPAK=0 ;;
-      --allow-critical-removal) ALLOW_CRITICAL_REMOVAL=1 ;;
-      -h|--help) usage; exit 0 ;;
-      *) die "Unknown option: $1" ;;
+    --apply) APPLY=1 ;;
+    --mode)
+      shift || die "--mode requires an argument"
+      MODE="${1:-}"
+      case "$MODE" in
+      purge-dkms|force-dkms) ;;
+      *) die "Unsupported mode: $MODE" ;;
+      esac
+      ;;
+    --no-flatpak) ENABLE_FLATPAK=0 ;;
+    --no-quarantine) QUARANTINE_STALE_DKMS=0 ;;
+    --allow-critical-removal) ALLOW_CRITICAL_REMOVAL=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *) die "Unknown option: $1" ;;
     esac
     shift || true
   done
@@ -102,29 +132,54 @@ require_root() {
   fi
 }
 
-run() {
-  log "+ $*"
-  if ((APPLY)); then
-    "$@" 2>&1 | tee -a "$LOG"
-  else
-    log "[dry-run] skipped: $*"
+run_logged() {
+  local fatal="$1"
+  shift
+
+  local cmd
+  cmd="$(cmd_string "$@")"
+  log "+ ${cmd}"
+
+  if ((APPLY == 0)); then
+    log "[dry-run] skipped: ${cmd}"
+    return 0
   fi
+
+  CMD_COUNTER=$((CMD_COUNTER + 1))
+  local outfile="${SAVEPOINT}/cmd-${CMD_COUNTER}.log"
+
+  set +e
+  "$@" >"$outfile" 2>&1
+  local rc=$?
+  set -e
+
+  cat "$outfile" >> "$LOG"
+  cat "$outfile"
+
+  if ((rc != 0)); then
+    if [[ "$fatal" == "fatal" ]]; then
+      die "command failed with exit code ${rc}: ${cmd}"
+    fi
+    log "Non-fatal command returned ${rc}: ${cmd}"
+    return 0
+  fi
+
+  return 0
 }
 
-run_may_fail() {
-  log "+ $*"
-  if ((APPLY)); then
-    set +e
-    "$@" 2>&1 | tee -a "$LOG"
-    local rc=${PIPESTATUS[0]}
-    set -e
-    if ((rc != 0)); then
-      log "Non-fatal command returned ${rc}: $*"
-    fi
-    return 0
-  else
-    log "[dry-run] skipped: $*"
-  fi
+run() {
+  run_logged fatal "$@"
+}
+
+run_optional() {
+  # ERR traps are independent of errexit.  Temporarily disable the trap while
+  # running an explicitly optional command so its failure is recorded by
+  # run_logged instead of aborting the whole script.
+  trap - ERR
+  run_logged optional "$@"
+  local rc=$?
+  trap on_error ERR
+  return "$rc"
 }
 
 capture() {
@@ -133,7 +188,9 @@ capture() {
   log "Capturing ${name}"
   {
     printf '### %s\n' "$name"
-    printf '$ %q ' "$@"; printf '\n\n'
+    printf '$ '
+    printf '%q ' "$@"
+    printf '\n\n'
     "$@" || true
   } >"${SAVEPOINT}/${name}.txt" 2>&1
 }
@@ -163,7 +220,7 @@ fi
 
 echo "Rollback helper for savepoint: \${SP}"
 echo "This restores selected saved config/state references and attempts to reinstall system76-acpi-dkms."
-echo "It cannot guarantee a full OS snapshot rollback. Use your filesystem snapshot/Timeshift backup if available."
+echo "It is not a full filesystem snapshot rollback."
 read -r -p "Continue? [y/N] " ans
 [[ "\${ans}" == "y" || "\${ans}" == "Y" ]] || exit 0
 
@@ -183,6 +240,12 @@ if [[ -f "\${SP}/backups/var_lib_dkms_system76_acpi.tar" ]]; then
   echo "Restored /var/lib/dkms/system76_acpi from savepoint."
 fi
 
+if [[ -d "\${SP}/quarantine/system76_acpi" && ! -e /var/lib/dkms/system76_acpi ]]; then
+  mkdir -p /var/lib/dkms
+  cp -a "\${SP}/quarantine/system76_acpi" /var/lib/dkms/system76_acpi
+  echo "Copied quarantined /var/lib/dkms/system76_acpi back into place."
+fi
+
 apt-get update -m || true
 apt-get install -y system76-acpi-dkms || true
 dkms autoinstall || true
@@ -195,10 +258,7 @@ EOF
 }
 
 init_savepoint() {
-  mkdir -p "$SAVEPOINT"
-  chmod 700 "$SAVEPOINT"
-  : > "$LOG"
-  chmod 600 "$LOG"
+  ensure_log_target
   log "Program: $PROGRAM_NAME"
   log "Mode: $MODE"
   log "Apply: $APPLY"
@@ -226,19 +286,42 @@ init_savepoint() {
   write_rollback_helper
 }
 
+dpkg_has_record() {
+  dpkg-query -W -f='${db:Status-Abbrev}\n' "$1" >/dev/null 2>&1
+}
+
+pkg_is_active_or_configured() {
+  local state
+  state="$(dpkg-query -W -f='${db:Status-Abbrev}\n' "$1" 2>/dev/null || true)"
+  [[ "$state" =~ ^(i|r?c) ]]
+}
+
+pkg_is_installedish() {
+  local status
+  status="$(dpkg-query -W -f='${Status}\n' "$1" 2>/dev/null || true)"
+  [[ "$status" == install\ ok\ installed || "$status" == install\ ok\ half-configured || "$status" == install\ ok\ unpacked || "$status" == install\ ok\ half-installed ]]
+}
+
 critical_removal_guard() {
   local sim="${SAVEPOINT}/apt-purge-system76-acpi-dkms.simulation.txt"
   log "Simulating apt purge for system76-acpi-dkms"
+
   set +e
   apt-get -s purge system76-acpi-dkms >"$sim" 2>&1
   local rc=$?
   set -e
-  cat "$sim" | tee -a "$LOG" >/dev/null
+
+  cat "$sim" >> "$LOG"
+  cat "$sim"
+
   if ((rc != 0)); then
     die "apt purge simulation failed. See $sim"
   fi
 
-  if grep -Eq '^Remv (pop-desktop|linux-system76|linux-generic|linux-headers-generic|linux-image-generic|system76-driver-nvidia|nvidia-driver|nvidia-dkms|system76-driver)' "$sim"; then
+  # apt-get -s uses "Remv" for some versions and "Purg" when purge is
+  # requested.  Check both; otherwise a dangerous dependency cascade can
+  # pass this guard unnoticed.
+  if grep -Eq '^(Remv|Purg) (pop-desktop|linux-system76|linux-generic|linux-headers-generic|linux-image-generic|system76-driver-nvidia|system76-driver|nvidia-driver|nvidia-dkms)' "$sim"; then
     if ((ALLOW_CRITICAL_REMOVAL)); then
       log "WARNING: critical package removal detected, but --allow-critical-removal was provided."
     else
@@ -247,43 +330,104 @@ critical_removal_guard() {
   fi
 }
 
-installed_pkg() {
-  dpkg-query -W -f='${Status}\n' "$1" 2>/dev/null | grep -q 'install ok installed'
+discover_system76_acpi_dkms_versions() {
+  local root="/var/lib/dkms/system76_acpi"
+  [[ -d "$root" ]] || return 0
+
+  while IFS= read -r path; do
+    local version
+    version="$(basename "$path")"
+
+    # DKMS stores displaced in-tree modules here. It is not a module version.
+    case "$version" in
+    original_module|.*|source|build|kernel-*|collisions)
+      continue
+      ;;
+    esac
+
+    # Real DKMS versions normally have a source symlink, dkms.conf, or build dir.
+    if [[ -e "$path/source" || -f "$path/dkms.conf" || -d "$path/build" ]]; then
+      printf '%s\n' "$version"
+    fi
+  done < <(find "$root" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort -V)
 }
 
 latest_system76_acpi_dkms_version() {
-  find /var/lib/dkms/system76_acpi -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -V | tail -n 1
+  discover_system76_acpi_dkms_versions | sort -V | tail -n 1
 }
 
 all_kernel_dirs() {
-  find /lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | grep -E '^[0-9].*generic$' | sort -V
+  find /lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | grep -E '^[0-9].*generic$' | sort -V || true
 }
 
-repair_with_purge() {
-  log "Strategy: purge system76-acpi-dkms, keep kernel in-tree system76_acpi module, then repair dpkg/apt."
+quarantine_stale_dkms_tree() {
+  ((QUARANTINE_STALE_DKMS)) || { log "Stale DKMS quarantine disabled."; return 0; }
+  local root="/var/lib/dkms/system76_acpi"
+  [[ -d "$root" ]] || return 0
 
-  if installed_pkg "system76-acpi-dkms"; then
-    critical_removal_guard
-
-    local versions=()
-    mapfile -t versions < <(find /var/lib/dkms/system76_acpi -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -V || true)
-    for version in "${versions[@]}"; do
-      [[ -n "$version" ]] || continue
-      run_may_fail dkms remove -m system76_acpi -v "$version" --all
-    done
-
-    run apt-get purge -y system76-acpi-dkms
-  else
-    log "system76-acpi-dkms is not installed; skipping purge."
+  if pkg_is_installedish "system76-acpi-dkms"; then
+    log "Not quarantining ${root}; system76-acpi-dkms still appears installed."
+    return 0
   fi
 
+  local valid_versions=()
+  mapfile -t valid_versions < <(discover_system76_acpi_dkms_versions || true)
+  if ((${#valid_versions[@]} > 0)); then
+    log "Not quarantining ${root}; valid DKMS version dirs remain: ${valid_versions[*]}"
+    return 0
+  fi
+
+  log "Quarantining stale DKMS tree ${root}; no valid system76_acpi DKMS versions remain."
+  if ((APPLY)); then
+    mkdir -p "${SAVEPOINT}/quarantine"
+    mv "$root" "${SAVEPOINT}/quarantine/system76_acpi"
+  else
+    log "[dry-run] skipped: mv ${root} ${SAVEPOINT}/quarantine/system76_acpi"
+  fi
+}
+
+repair_package_manager() {
   run apt-get clean
   run apt-get update -m
   run dpkg --configure -a
   run apt-get -f install -y
+  run dpkg --configure -a
   run apt-get full-upgrade -y
-  run apt-get autoremove --purge -y
+  if ((ENABLE_AUTOREMOVE)); then
+    run apt-get autoremove --purge -y
+  else
+    log "Skipping apt autoremove --purge (opt-in with --autoremove; prevents unrelated package removal)."
+  fi
   run apt-get clean
+}
+
+repair_with_purge() {
+  log "Strategy: purge system76-acpi-dkms, keep the kernel in-tree system76_acpi module, then repair dpkg/apt."
+
+  if dpkg_has_record "system76-acpi-dkms"; then
+    critical_removal_guard
+
+    local versions=()
+    mapfile -t versions < <(discover_system76_acpi_dkms_versions || true)
+
+    if ((${#versions[@]} == 0)); then
+      log "No valid system76_acpi DKMS version directories found. This is OK after a partial previous cleanup."
+    else
+      local version
+      for version in "${versions[@]}"; do
+        [[ -n "$version" ]] || continue
+        run_optional dkms remove -m system76_acpi -v "$version" --all
+      done
+    fi
+
+    # Purge the Debian package so future kernel postinst hooks stop autoinstalling system76_acpi via DKMS.
+    run apt-get purge -y system76-acpi-dkms
+  else
+    log "system76-acpi-dkms has no dpkg record; skipping apt purge."
+  fi
+
+  quarantine_stale_dkms_tree
+  repair_package_manager
 }
 
 repair_with_force_dkms() {
@@ -291,28 +435,26 @@ repair_with_force_dkms() {
 
   local version
   version="$(latest_system76_acpi_dkms_version || true)"
-  [[ -n "$version" ]] || die "No system76_acpi version found under /var/lib/dkms/system76_acpi. Install/reinstall system76-acpi-dkms or use --mode purge-dkms."
+
+  if [[ -z "$version" ]]; then
+    die "No valid system76_acpi DKMS version found under /var/lib/dkms/system76_acpi. Use --mode purge-dkms for the recommended recovery, or reinstall system76-acpi-dkms manually before force mode."
+  fi
 
   local kernels=()
   mapfile -t kernels < <(all_kernel_dirs || true)
   ((${#kernels[@]} > 0)) || die "No generic kernels found under /lib/modules."
 
+  local kernel
   for kernel in "${kernels[@]}"; do
-    if [[ -d "/lib/modules/${kernel}/build" ]]; then
-      run_may_fail dkms build -m system76_acpi -v "$version" -k "$kernel" --force
+    if [[ -e "/lib/modules/${kernel}/build" ]]; then
+      run_optional dkms build -m system76_acpi -v "$version" -k "$kernel" --force
       run dkms install -m system76_acpi -v "$version" -k "$kernel" --force
     else
       log "Skipping ${kernel}; missing /lib/modules/${kernel}/build headers link."
     fi
   done
 
-  run apt-get clean
-  run apt-get update -m
-  run dpkg --configure -a
-  run apt-get -f install -y
-  run apt-get full-upgrade -y
-  run apt-get autoremove --purge -y
-  run apt-get clean
+  repair_package_manager
 }
 
 flatpak_maintenance() {
@@ -321,13 +463,13 @@ flatpak_maintenance() {
 
   local target_user="${SUDO_USER:-}"
   if [[ -n "$target_user" && "$target_user" != "root" ]] && id "$target_user" >/dev/null 2>&1; then
-    run_may_fail runuser -u "$target_user" -- flatpak repair --user -y
-    run_may_fail runuser -u "$target_user" -- flatpak update -y
-    run_may_fail runuser -u "$target_user" -- flatpak uninstall --unused -y
+    run_optional runuser -u "$target_user" -- flatpak repair --user
+    run_optional runuser -u "$target_user" -- flatpak update -y
+    run_optional runuser -u "$target_user" -- flatpak uninstall --unused -y
   else
-    run_may_fail flatpak repair --user -y
-    run_may_fail flatpak update -y
-    run_may_fail flatpak uninstall --unused -y
+    run_optional flatpak repair --user
+    run_optional flatpak update -y
+    run_optional flatpak uninstall --unused -y
   fi
 }
 
@@ -335,6 +477,7 @@ post_checks() {
   capture "post-dpkg-audit" dpkg --audit
   capture "post-dkms-status" dkms status
   capture "post-apt-simulate-upgrade" bash -c "apt-get -s full-upgrade | sed -n '1,220p'"
+  capture "post-system76-acpi-modinfo" bash -c "modinfo system76_acpi 2>/dev/null | sed -n '1,120p' || true"
   log "Post-checks saved in $SAVEPOINT"
 }
 
@@ -348,8 +491,8 @@ main() {
   fi
 
   case "$MODE" in
-    purge-dkms) repair_with_purge ;;
-    force-dkms) repair_with_force_dkms ;;
+  purge-dkms) repair_with_purge ;;
+  force-dkms) repair_with_force_dkms ;;
   esac
 
   flatpak_maintenance
@@ -357,6 +500,10 @@ main() {
 
   log "Finished. Savepoint: $SAVEPOINT"
   if ((APPLY)); then
+    log "Recommended verification:"
+    log "  sudo dpkg --audit"
+    log "  dkms status"
+    log "  uname -r"
     log "Reboot after verifying: sudo reboot"
   else
     log "No changes were made because --apply was not provided."
